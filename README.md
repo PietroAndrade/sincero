@@ -4,7 +4,7 @@
 
 🇧🇷 [Versão em português](README.pt-br.md)
 
-SINCERO shows the real cost of buying an *off-plan* apartment in Brazil: the INCC
+SINCERO shows the real cost of buying an apartment *na planta* in Brazil: the INCC
 correction on everything you still owe during construction, the construction interest
 charged by the bank, the closing costs, the SAC/PRICE installments after key handover,
 the credit gap at transfer ("the Caixa trigger") — and what changes when you put more
@@ -26,6 +26,7 @@ cash on the table.
 │   ├── features_pt_br/       the same scenarios in Portuguese — documentation only, not executed
 │   ├── support/              behave support library (no behave imports)
 │   └── tests/                pytest unit tests
+├── docs/                     design notes and future features
 ├── context.md, handoff-*.md  original business context
 └── ROADMAP.md                milestones and decisions
 ```
@@ -45,10 +46,10 @@ pip install -r requirements-dev.txt        # runtime + behave + pytest
 # The five reference properties (SO, F, SV, F4, RA) with 20% down payment and R$ 13,000 FGTS
 python cli.py
 
-# One property: price, months to delivery, FGTS, monthly installment to the developer and
+# One property: price, months REMAINING until delivery, FGTS, monthly installment to the developer and
 # the months with a balloon payment — the balloon AMOUNT is derived, never typed in
 python cli.py --name RA --price 440000 --months 19 --fgts 13000 \
-              --installment 2500 --balloon-month 6 --balloon-month 12 --progress 10
+              --installment 2500 --balloon-month 6 --balloon-month 12
 
 # "More cash" simulation: the same contract with increasing cash at signing
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
@@ -63,12 +64,11 @@ Every option:
 
 | Option | Meaning | Default |
 |---|---|---|
-| `--price`, `--months` | list price and months to delivery | required |
+| `--price`, `--months` | list price and **months remaining until delivery** (time left, not the project's total duration) | required |
 | `--down-payment-pct` | down payment required by the developer (% of price) | 20 |
 | `--fgts`, `--cash` | paid at signing; excess above the down payment reduces the financed balance | 0 |
 | `--installment` | monthly amount paid to the developer during construction | balance ÷ months |
 | `--balloon-month` | construction month with a balloon (repeatable); amount = uncovered balance ÷ balloons | none |
-| `--progress` | physical progress at signing (%) — drives the construction interest | 0 |
 | `--incc`, `--bank-rate` | INCC and bank rate (% per year) | 7.0, 10.26 |
 | `--term` | bank financing term (months) | 360 |
 | `--pre-approved` | credit pre-approved by the bank at signing | nominal balance |
@@ -94,13 +94,13 @@ make report                       # Allure 3 report (requires: npm install -g al
 
 | Topic | Rule |
 |---|---|
-| Month numbering | 0 = signing; 1..N = construction; N = key handover; bank installments from N+1 |
+| Month numbering | 0 = signing; 1..N = the N months remaining until delivery; N = key handover; bank installments from N+1 |
 | Rates | annual → monthly by compounding: `(1 + r)^(1/12) − 1` |
 | Down payment | `price × pct`; FGTS + cash at signing deducted first; excess reduces the financed balance |
 | Developer installments | buyer-chosen monthly amount (or balance ÷ N); each payment in month k × `(1 + INCC)^k` |
 | Balloon payments | **derived**: `(remaining down payment − installment × N) ÷ number of balloon months`, INCC-corrected at their month |
 | Mortgage balance | `price − max(down payment, upfront)`, × `(1 + INCC)^N` at delivery → "hidden INCC debt" |
-| Construction interest | progress linear from its level at signing to 100%; month k interest = corrected balance × progress × bank rate; never amortizes |
+| Construction interest | bank releases the balance evenly over the remaining months (k/N after month k); month k interest = corrected balance × k/N × bank rate; never amortizes. Physical progress at signing: [future feature](docs/future-features/physical-progress.md) |
 | Closing costs | ITBI 2.0% + registry/deed 0.5% of the price (configurable) |
 | Bank financing | SAC and PRICE over the term; minimum income = first installment ÷ 30% |
 | Credit gap | `max(0, corrected balance − pre-approved)`; pro-soluto split linearly over the chosen months |
