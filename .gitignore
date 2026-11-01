@@ -10,3 +10,6 @@ build/
 *.egg-info/
 allure-results/
 allure-report/
+sincero.zip
+*changed_files.zip
+progress2.output

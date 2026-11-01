@@ -1,0 +1,4 @@
+-r requirements.txt
+behave>=1.2.6
+allure-behave>=2.13
+pytest>=8.0
