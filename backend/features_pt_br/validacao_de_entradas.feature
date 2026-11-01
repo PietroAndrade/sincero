@@ -8,17 +8,12 @@ Funcionalidade: Validação de entradas
     E a construtora exige uma entrada de 20,0% do preço de tabela
 
   Esquema do Cenário: Dados impossíveis do imóvel são rejeitados
-    Dado um imóvel "X" anunciado por R$ <preco> com <meses> meses até a entrega
+    Dado um imóvel "X" anunciado por R$ <preco> com <meses> meses restantes até a entrega
     Quando o comprador executa a simulação
     Então a simulação deve ser rejeitada com o erro "<erro>"
 
     Exemplos:
-      | preco      | meses | erro                                        |
-      | 0,00       | 12    | o preço de tabela deve ser maior que zero   |
-      | 440.000,00 | 0     | os meses até a entrega devem ser pelo menos 1 |
+      | preco      | meses | erro                                                    |
+      | 0,00       | 12    | o preço de tabela deve ser maior que zero               |
+      | 440.000,00 | 0     | os meses restantes até a entrega devem ser pelo menos 1 |
 
-  Cenário: Avanço de obra fora de 0%..100% é rejeitado
-    Dado um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses até a entrega
-    E a obra está 120% concluída na assinatura
-    Quando o comprador executa a simulação
-    Então a simulação deve ser rejeitada com o erro "o avanço da obra deve estar entre 0% e 100%"

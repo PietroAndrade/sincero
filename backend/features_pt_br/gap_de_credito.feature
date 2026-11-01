@@ -6,7 +6,7 @@ Funcionalidade: Gap de crédito no repasse ao banco
 
   Contexto:
     Dado INCC de 7,00% ao ano e financiamento bancário de 10,26% ao ano em 360 meses
-    E um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses até a entrega
+    E um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
     E a construtora exige uma entrada de 20,0% do preço de tabela
     E qualquer dívida pro-soluto é paga à construtora em 12 meses
 

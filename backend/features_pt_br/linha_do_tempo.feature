@@ -6,12 +6,11 @@ Funcionalidade: Linha do tempo mensal do fluxo de caixa
 
   Contexto:
     Dado INCC de 7,00% ao ano e financiamento bancário de 10,26% ao ano em 360 meses
-    E um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses até a entrega
+    E um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
     E a construtora exige uma entrada de 20,0% do preço de tabela
 
   Cenário: A linha do tempo mostra onde terminam os boletos da construtora e começam os do banco
     Dado que o comprador paga R$ 13.000,00 de FGTS na assinatura
-    E a obra está 0% concluída na assinatura
     E o comprador paga à construtora R$ 2.500,00 por mês
     E o contrato tem parcelas balão nos meses 6 e 12
     Quando o comprador executa a simulação
@@ -31,7 +30,6 @@ Funcionalidade: Linha do tempo mensal do fluxo de caixa
 
   Cenário: O mês do balão é o mês mais pesado da fase de obra
     Dado que o comprador paga R$ 13.000,00 de FGTS na assinatura
-    E a obra está 0% concluída na assinatura
     E o comprador paga à construtora R$ 2.500,00 por mês
     E o contrato tem parcelas balão nos meses 6 e 12
     Quando o comprador executa a simulação

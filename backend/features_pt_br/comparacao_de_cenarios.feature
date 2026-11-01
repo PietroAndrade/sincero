@@ -6,7 +6,6 @@ Funcionalidade: Comparação de imóveis e simulação com mais dinheiro
   Contexto:
     Dado INCC de 7,00% ao ano e financiamento bancário de 10,26% ao ano em 360 meses
     E a construtora exige uma entrada de 20,0% do preço de tabela
-    E a obra está 0% concluída na assinatura
 
   Cenário: Os cinco imóveis candidatos lado a lado
     Dado que o comprador paga R$ 13.000,00 de FGTS na assinatura
@@ -27,7 +26,7 @@ Funcionalidade: Comparação de imóveis e simulação com mais dinheiro
       | RA   | 3.947,37            | 39.802,30            | 391.802,30       | 30.965,10     | 4.290,33             | 14.301,10        |
 
   Cenário: Uma escada de dinheiro mostra o que cada real a mais na assinatura compra
-    Dado um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses até a entrega
+    Dado um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
     E o comprador paga R$ 13.000,00 de FGTS na assinatura
     Quando o comprador compara pagar os seguintes valores em dinheiro na assinatura:
       | dinheiro   |
@@ -43,7 +42,7 @@ Funcionalidade: Comparação de imóveis e simulação com mais dinheiro
       | 100.000,00 | 0,00                | 36.975,43            | 363.975,43       | 3.985,62             | 13.285,40        |
 
   Cenário: Reexecutar com um INCC menor mostra quanto do custo é indexação
-    Dado um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses até a entrega
+    Dado um imóvel "RA" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
     Quando o comprador executa a simulação
     E o comprador reexecuta a simulação com o INCC a 4,00% ao ano
     Então a dívida fantasma do INCC sobre o saldo do financiamento deve cair de R$ 39.802,30 para R$ 22.552,00
