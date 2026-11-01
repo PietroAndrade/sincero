@@ -25,6 +25,7 @@ custos de cartório, as parcelas SAC/PRICE após as chaves, o gap de crédito no
 │   ├── features_pt_br/       os mesmos cenários em português — apenas documentação, não executados
 │   ├── support/              biblioteca de apoio do behave (sem imports do behave)
 │   └── tests/                testes unitários pytest
+├── docs/                     notas de projeto e funcionalidades futuras
 ├── context.md, handoff-*.md  contexto de negócio original
 └── ROADMAP.md                marcos e decisões
 ```
@@ -44,10 +45,10 @@ pip install -r requirements-dev.txt        # runtime + behave + pytest
 # Os cinco imóveis de referência (SO, F, SV, F4, RA) com 20% de entrada e R$ 13.000 de FGTS
 python cli.py
 
-# Um imóvel: preço, meses até a entrega, FGTS, parcela mensal à construtora e os meses com
+# Um imóvel: preço, meses RESTANTES até a entrega, FGTS, parcela mensal à construtora e os meses com
 # parcela balão — o VALOR do balão é derivado, nunca digitado
 python cli.py --name RA --price 440000 --months 19 --fgts 13000 \
-              --installment 2500 --balloon-month 6 --balloon-month 12 --progress 10
+              --installment 2500 --balloon-month 6 --balloon-month 12
 
 # Simulação "com mais dinheiro": o mesmo contrato com valores crescentes na assinatura
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
@@ -62,12 +63,11 @@ Todas as opções:
 
 | Opção | Significado | Padrão |
 |---|---|---|
-| `--price`, `--months` | preço de tabela e meses até a entrega | obrigatórios |
+| `--price`, `--months` | preço de tabela e **meses restantes até a entrega** (tempo que falta, não a duração total da obra) | obrigatórios |
 | `--down-payment-pct` | entrada exigida pela construtora (% do preço) | 20 |
 | `--fgts`, `--cash` | pagos na assinatura; o excedente acima da entrada reduz o saldo financiado | 0 |
 | `--installment` | valor mensal pago à construtora durante a obra | saldo ÷ meses |
 | `--balloon-month` | mês de obra com balão (repetível); valor = saldo descoberto ÷ nº de balões | nenhum |
-| `--progress` | avanço físico na assinatura (%) — determina os juros de obra | 0 |
 | `--incc`, `--bank-rate` | INCC e taxa do banco (% ao ano) | 7,0 e 10,26 |
 | `--term` | prazo do financiamento bancário (meses) | 360 |
 | `--pre-approved` | crédito pré-aprovado pelo banco na assinatura | saldo nominal |
@@ -96,13 +96,13 @@ A suíte executa apenas as features em inglês (`backend/features/`). As traduç
 
 | Tema | Regra |
 |---|---|
-| Numeração dos meses | 0 = assinatura; 1..N = obra; N = entrega das chaves; parcelas do banco a partir de N+1 |
+| Numeração dos meses | 0 = assinatura; 1..N = os N meses restantes até a entrega; N = entrega das chaves; parcelas do banco a partir de N+1 |
 | Taxas | anual → mensal por capitalização composta: `(1 + r)^(1/12) − 1` |
 | Entrada | `preço × %`; FGTS + dinheiro na assinatura abatidos primeiro; o excedente reduz o saldo financiado |
 | Parcelas da construtora | valor mensal escolhido pelo comprador (ou saldo ÷ N); cada pagamento no mês k × `(1 + INCC)^k` |
 | Parcelas balão | **derivadas**: `(saldo da entrada − parcela × N) ÷ nº de meses de balão`, corrigidas pelo INCC no seu mês |
 | Saldo do financiamento | `preço − max(entrada, pago na assinatura)`, × `(1 + INCC)^N` na entrega → "dívida fantasma do INCC" |
-| Juros de obra | avanço linear do nível na assinatura até 100%; juros do mês k = saldo corrigido × avanço × taxa do banco; nunca amortizam |
+| Juros de obra | o banco libera o saldo uniformemente pelos meses restantes (k/N após o mês k); juros do mês k = saldo corrigido × k/N × taxa do banco; nunca amortizam. Avanço físico na assinatura: [funcionalidade futura](docs/future-features/physical-progress.pt-br.md) |
 | Custos de cartório | ITBI 2,0% + registro/escritura 0,5% do preço (configuráveis) |
 | Financiamento bancário | SAC e PRICE no prazo; renda mínima = primeira parcela ÷ 30% |
 | Gap de crédito | `max(0, saldo corrigido − pré-aprovado)`; pro-soluto dividido linearmente nos meses escolhidos |
