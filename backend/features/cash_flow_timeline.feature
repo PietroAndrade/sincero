@@ -7,13 +7,12 @@ Feature: Monthly cash flow timeline
 
   Background:
     Given INCC at 7.00% per year and bank financing at 10.26% per year over 360 months
-    And a property "RA" listed at R$ 440,000.00 with 19 months to delivery
+    And a property "RA" listed at R$ 440,000.00 with 19 months remaining until delivery
     And the developer requires a down payment of 20.0% of the list price
 
   @allure.label.suite:Timeline @allure.label.subSuite:DoubleBilling
   Scenario: The timeline shows where developer bills end and bank bills begin
     Given the buyer pays R$ 13,000.00 of FGTS upfront
-    And the construction is 0% complete at signing
     And the buyer pays the developer R$ 2,500.00 per month
     And the contract has balloon payments in months 6 and 12
     When the buyer runs the simulation
@@ -34,7 +33,6 @@ Feature: Monthly cash flow timeline
   @allure.label.suite:Timeline @allure.label.subSuite:PeakMonth
   Scenario: The balloon month is the hardest month of the construction phase
     Given the buyer pays R$ 13,000.00 of FGTS upfront
-    And the construction is 0% complete at signing
     And the buyer pays the developer R$ 2,500.00 per month
     And the contract has balloon payments in months 6 and 12
     When the buyer runs the simulation

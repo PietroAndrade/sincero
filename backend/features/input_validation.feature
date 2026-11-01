@@ -10,18 +10,11 @@ Feature: Input validation
 
   @allure.label.suite:Validation @allure.label.subSuite:PropertyData
   Scenario Outline: Impossible property data is rejected
-    Given a property "X" listed at R$ <price> with <months> months to delivery
+    Given a property "X" listed at R$ <price> with <months> months remaining until delivery
     When the buyer runs the simulation
     Then the simulation should be rejected with the error "<error>"
 
     Examples:
-      | price      | months | error                                 |
-      | 0.00       | 12     | list price must be greater than zero  |
-      | 440,000.00 | 0      | months to delivery must be at least 1 |
-
-  @allure.label.suite:Validation @allure.label.subSuite:Progress
-  Scenario: Construction progress outside 0%..100% is rejected
-    Given a property "RA" listed at R$ 440,000.00 with 19 months to delivery
-    And the construction is 120% complete at signing
-    When the buyer runs the simulation
-    Then the simulation should be rejected with the error "construction progress must be between 0% and 100%"
+      | price      | months | error                                              |
+      | 0.00       | 12     | list price must be greater than zero               |
+      | 440,000.00 | 0      | months remaining until delivery must be at least 1 |

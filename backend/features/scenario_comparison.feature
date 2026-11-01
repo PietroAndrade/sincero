@@ -7,7 +7,6 @@ Feature: Comparing properties and simulating more cash
   Background:
     Given INCC at 7.00% per year and bank financing at 10.26% per year over 360 months
     And the developer requires a down payment of 20.0% of the list price
-    And the construction is 0% complete at signing
 
   @allure.label.suite:Comparison @allure.label.subSuite:Properties
   Scenario: The five candidate properties side by side
@@ -31,7 +30,7 @@ Feature: Comparing properties and simulating more cash
   @what-if @more-cash
   @allure.label.suite:Comparison @allure.label.subSuite:MoreCash
   Scenario: A cash ladder shows what each extra real at signing buys
-    Given a property "RA" listed at R$ 440,000.00 with 19 months to delivery
+    Given a property "RA" listed at R$ 440,000.00 with 19 months remaining until delivery
     And the buyer pays R$ 13,000.00 of FGTS upfront
     When the buyer compares paying the following cash upfront:
       | cash       |
@@ -49,7 +48,7 @@ Feature: Comparing properties and simulating more cash
   @what-if
   @allure.label.suite:Comparison @allure.label.subSuite:LowerIncc
   Scenario: Re-running with a lower INCC shows how much of the cost is indexation
-    Given a property "RA" listed at R$ 440,000.00 with 19 months to delivery
+    Given a property "RA" listed at R$ 440,000.00 with 19 months remaining until delivery
     When the buyer runs the simulation
     And the buyer re-runs the simulation with the INCC at 4.00% per year
     Then the hidden INCC debt on the mortgage balance should drop from R$ 39,802.30 to R$ 22,552.00

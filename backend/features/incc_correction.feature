@@ -12,7 +12,7 @@ Feature: INCC correction on the mortgage balance
 
   @allure.label.suite:HiddenDebt @allure.label.subSuite:ByConstructionTerm
   Scenario Outline: The longer the construction, the larger the hidden INCC debt
-    Given a property "<name>" listed at R$ <price> with <months> months to delivery
+    Given a property "<name>" listed at R$ <price> with <months> months remaining until delivery
     When the buyer runs the simulation
     Then the nominal mortgage balance should be R$ <nominal>
     And the mortgage balance at delivery should be R$ <at_delivery>
@@ -27,7 +27,7 @@ Feature: INCC correction on the mortgage balance
   @reference
   @allure.label.suite:HiddenDebt @allure.label.subSuite:ReferenceContract
   Scenario: The reference contract of the original analysis grows from R$ 223k to R$ 264k
-    Given a property "REF" listed at R$ 274,000.00 with 30 months to delivery
+    Given a property "REF" listed at R$ 274,000.00 with 30 months remaining until delivery
     And the developer requires a down payment of 18.613% of the list price
     When the buyer runs the simulation
     Then the required down payment should be R$ 50,999.62
@@ -39,6 +39,6 @@ Feature: INCC correction on the mortgage balance
   @allure.label.suite:HiddenDebt @allure.label.subSuite:LowerIncc
   Scenario: A lower INCC shrinks the hidden debt
     Given INCC at 4.00% per year and bank financing at 10.26% per year over 360 months
-    And a property "RA" listed at R$ 440,000.00 with 19 months to delivery
+    And a property "RA" listed at R$ 440,000.00 with 19 months remaining until delivery
     When the buyer runs the simulation
     Then the hidden INCC debt on the mortgage balance should be R$ 22,552.00

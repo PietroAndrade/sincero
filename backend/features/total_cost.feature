@@ -7,13 +7,12 @@ Feature: Total cost of the apartment until key handover
 
   Background:
     Given INCC at 7.00% per year and bank financing at 10.26% per year over 360 months
-    And a property "RA" listed at R$ 440,000.00 with 19 months to delivery
+    And a property "RA" listed at R$ 440,000.00 with 19 months remaining until delivery
     And the developer requires a down payment of 20.0% of the list price
 
   @allure.label.suite:TotalCost @allure.label.subSuite:Breakdown
   Scenario: The cost breakdown shows almost 20% on top of the list price
     Given the buyer pays R$ 13,000.00 of FGTS upfront
-    And the construction is 0% complete at signing
     And closing costs of ITBI 2.0% and registry 0.5% of the list price
     When the buyer runs the simulation
     Then the cost breakdown should be:
