@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from .closing_costs import ClosingCosts
 from .construction import ConstructionInterest
 from .down_payment import DownPaymentPlan
-from .input_interface import SimulationInputInterface
 from .mortgage import MortgageBalance
 
 
@@ -22,9 +21,9 @@ class CostLine:
 
 
 class TotalCost:
-    def __init__(self, inp: SimulationInputInterface, dp: DownPaymentPlan, mortgage: MortgageBalance,
+    def __init__(self, list_price: float, dp: DownPaymentPlan, mortgage: MortgageBalance,
                  construction: ConstructionInterest, closing: ClosingCosts):
-        self.list_price = inp.contract().list_price
+        self.list_price = list_price
         self.lines = [
             # the base column adds up to the list price even when upfront > down payment
             CostLine("Down payment", max(dp.required, dp.upfront), dp.incc_correction),

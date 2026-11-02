@@ -23,7 +23,7 @@ def test_closing_costs_income_ratio_and_pro_soluto_flags_reach_the_model():
                                       "--income-ratio", "0.35", "--pro-soluto-months", "24",
                                       "--balloon-month", "6", "--balloon-month", "12", "--installment", "2500"])
     inp = input_from_args(args)
-    market, credit, contract = inp.market(), inp.bank_credit(), inp.contract()
+    market, credit, contract = inp.market, inp.bank_credit, inp.contract
     assert (market.itbi_pct, market.registry_pct, market.income_commitment_ratio, credit.pro_soluto_months) == (3, 1, 0.35, 24)
     assert contract.balloon_months == (6, 12) and contract.developer_installment == 2500
 

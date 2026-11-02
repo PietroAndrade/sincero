@@ -7,12 +7,12 @@ from .input_interface import SimulationInputInterface
 from .inputs import SimulationInput
 from .rates import MonthlyRate, annual_to_monthly
 from .simulator import OffPlanSimulator, SimulationResult, simulate
-from .validators import CompositeValidator, InputValidator, default_validator
+from .validators import DEFAULT_POLICY, CompositeValidator, ValidationPolicy, Validator
 
 __all__ = [
     "Balloon", "SimulationInput", "SimulationInputInterface", "ContractData", "MarketData", "BankCreditData",
     "field_names", "field_defaults", "SimulationError", "SimulationResult",
-    "OffPlanSimulator", "InputValidator", "CompositeValidator", "default_validator",
+    "OffPlanSimulator", "Validator", "CompositeValidator", "ValidationPolicy", "DEFAULT_POLICY",
     "MonthlyRate", "annual_to_monthly", "simulate", "compare", "what_if", "cash_ladder",
     "WhatIf", "Variation",
 ]

@@ -1,9 +1,13 @@
 """
 Data transfer objects: the three groups of values a simulation needs.
 
-Each DTO is a frozen dataclass with one responsibility and no behaviour. They carry the
-application's defaults — the single source of truth the CLI reads for `--help` — and
-nothing else: derived amounts live in `SimulationInput`, rules in `validators.py`.
+Each DTO is a frozen dataclass with one responsibility. They carry the application's
+defaults — the single source of truth the CLI reads for `--help`. The only behaviour a
+DTO has is the amounts derived from its own fields (`ContractData.required_down_payment`
+and friends); validation rules live in `validators.py`, orchestration in `simulator.py`.
+
+Components receive the DTO they need, never the whole simulation input:
+`DownPaymentPlan(contract, …)`, `ClosingCosts(list_price, market)`, `CreditGap(bank_credit, …)`.
 
     ContractData    what the buyer signs with the developer
     MarketData      the economic environment: rates, financing term, fees, income ceiling
@@ -37,6 +41,22 @@ class ContractData:
 
     def __post_init__(self):
         object.__setattr__(self, "balloon_months", tuple(self.balloon_months))
+
+    # ----- amounts derived from the contract alone ------------------------
+    @property
+    def required_down_payment(self) -> float:
+        """Down payment demanded by the developer: `list_price × down_payment_pct`."""
+        return self.list_price * self.down_payment_pct / 100.0
+
+    @property
+    def upfront(self) -> float:
+        """Everything paid at signing (FGTS + cash)."""
+        return self.fgts_upfront + self.cash_upfront
+
+    @property
+    def remaining_down_payment(self) -> float:
+        """Down payment still owed to the developer after the upfront credits (never negative)."""
+        return max(0.0, self.required_down_payment - self.upfront)
 
 
 @dataclass(frozen=True)

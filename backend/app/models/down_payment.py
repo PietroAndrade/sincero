@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 from .errors import SimulationError
 from .input_dto import ContractData
-from .input_interface import SimulationInputInterface
 from .rates import MonthlyRate
 
 _CENT = 0.005
@@ -43,13 +42,13 @@ class DownPaymentPlan:
     Every payment in month k is corrected by the INCC factor `(1 + incc_pm)^k`.
     """
 
-    def __init__(self, inp: SimulationInputInterface, incc: MonthlyRate):
-        self.required = inp.required_down_payment()
-        self.upfront = inp.upfront()
-        self.remaining = inp.remaining_down_payment()
-        n = inp.contract().months_remaining
+    def __init__(self, contract: ContractData, incc: MonthlyRate):
+        self.required = contract.required_down_payment
+        self.upfront = contract.upfront
+        self.remaining = contract.remaining_down_payment
+        n = contract.months_remaining
 
-        self.nominal_installment, self.balloons = self._size_payments(inp.contract(), n)
+        self.nominal_installment, self.balloons = self._size_payments(contract, n)
         balloon_by_month = {b.month: b.nominal for b in self.balloons}
         self.schedule: list[DeveloperPayment] = [
             DeveloperPayment(

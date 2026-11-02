@@ -1,14 +1,13 @@
 """ITBI, deed and registry costs."""
 from __future__ import annotations
 
-from .input_interface import SimulationInputInterface
+from .input_dto import MarketData
 
 
 class ClosingCosts:
-    def __init__(self, inp: SimulationInputInterface):
-        price, market = inp.contract().list_price, inp.market()
-        self.itbi = price * market.itbi_pct / 100.0
-        self.registry = price * market.registry_pct / 100.0
+    def __init__(self, list_price: float, market: MarketData):
+        self.itbi = list_price * market.itbi_pct / 100.0
+        self.registry = list_price * market.registry_pct / 100.0
 
     @property
     def total(self) -> float:

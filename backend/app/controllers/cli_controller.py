@@ -13,8 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from app.models import (ContractData, SimulationError, SimulationInput, SimulationInputInterface, cash_ladder,
-                        compare, field_defaults, simulate)
+from app.models import ContractData, SimulationError, SimulationInput, cash_ladder, compare, field_defaults, simulate
 from app.views import comparison_table, report, simulation_to_dict, what_if_to_dict
 from app.views.text_view import brl
 
@@ -104,7 +103,7 @@ def run_reference() -> str:
     return "\n".join(parts)
 
 
-def run_cash_ladder(inp: SimulationInputInterface, amounts: list[float], as_json: bool) -> str:
+def run_cash_ladder(inp: SimulationInput, amounts: list[float], as_json: bool) -> str:
     ladder = what_if_to_dict(cash_ladder(inp, amounts))
     if as_json:
         return json.dumps(ladder, indent=2)

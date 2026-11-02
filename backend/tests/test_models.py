@@ -1,4 +1,6 @@
 """Structural invariants of the domain model that the business features do not spell out."""
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from app.models import ContractData, SimulationError, SimulationInput, cash_ladder, simulate, what_if
@@ -38,7 +40,7 @@ def test_timeline_total_matches_components(ra):
 def test_cost_breakdown_base_column_adds_up_to_the_list_price(ra):
     for inp in (ra, ra.with_overrides(cash_upfront=100_000, developer_installment=None, balloon_months=())):
         r = simulate(inp)
-        assert sum(line.base_value for line in r.total_cost.lines) == pytest.approx(inp.contract().list_price)
+        assert sum(line.base_value for line in r.total_cost.lines) == pytest.approx(inp.contract.list_price)
 
 
 def test_what_if_runs_each_variation(ra):
@@ -59,12 +61,10 @@ def test_cash_ladder_is_monotonic(ra):
 
 
 def test_inputs_are_immutable(ra):
-    with pytest.raises(AttributeError):
-        ra.list_price = 1  # type: ignore[misc]
-    with pytest.raises(AttributeError):
-        ra._contract = None  # type: ignore[misc]
-    with pytest.raises(Exception):
-        ra.contract().list_price = 1  # type: ignore[misc]
+    with pytest.raises(FrozenInstanceError):
+        ra.contract = None  # type: ignore[misc]
+    with pytest.raises(FrozenInstanceError):
+        ra.contract.list_price = 1  # type: ignore[misc]
 
 
 @pytest.mark.parametrize("field,value,message", [

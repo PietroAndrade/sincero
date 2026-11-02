@@ -15,9 +15,9 @@ backend/
 ├── app/
 │   ├── models/                 # domain — pure Python, no I/O, no serialization
 │   │   ├── input_dto.py        #   ContractData / MarketData / BankCreditData — frozen DTOs, the defaults
-│   │   ├── input_interface.py  #   SimulationInputInterface — pure ABC (methods only): the input contract
-│   │   ├── inputs.py           #   SimulationInput — immutable composition of the three DTOs
-│   │   ├── validators.py       #   InputValidator ABC + one small validator per concern
+│   │   ├── input_interface.py  #   SimulationInputInterface — pure ABC (methods only): validate(), with_overrides()
+│   │   ├── inputs.py           #   SimulationInput — frozen dataclass of the three DTOs
+│   │   ├── validators.py       #   Validator[DTO] ABC, one small validator per concern, ValidationPolicy
 │   │   ├── rates.py            #   annual -> monthly compounding
 │   │   ├── down_payment.py     #   DownPaymentPlan (installments + derived balloons, INCC-corrected)
 │   │   ├── mortgage.py         #   MortgageBalance (nominal vs corrected: the "hidden debt")
@@ -76,7 +76,7 @@ inp = SimulationInput(ContractData("RA", 440_000, 19, fgts_upfront=13_000, devel
                                    balloon_months=(6, 12)),
                       MarketData(incc_rate_pa=7.0))     # MarketData() and BankCreditData() default when omitted
 inp = SimulationInput.from_dict({"name": "RA", "list_price": 440_000, "months_remaining": 19})  # flat form (JSON/CLI)
-inp.contract().list_price, inp.market().incc_rate_pa     # the DTOs; inp.required_down_payment() etc. are derived
+inp.contract.list_price, inp.market.incc_rate_pa         # the DTOs; inp.contract.required_down_payment is derived
 result = simulate(inp)
 result.mortgage.hidden_incc_debt            # typed access
 result.down_payment.nominal_balloon         # derived: (remaining − 2,500 × 19) / 2

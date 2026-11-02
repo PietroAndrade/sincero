@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .input_interface import SimulationInputInterface
+from .inputs import SimulationInput
 from .simulator import SimulationResult, simulate
 
 
-def compare(inputs: list[SimulationInputInterface]) -> list[SimulationResult]:
+def compare(inputs: list[SimulationInput]) -> list[SimulationResult]:
     return [simulate(inp) for inp in inputs]
 
 
@@ -24,7 +24,7 @@ class WhatIf:
     variations: list[Variation]
 
 
-def what_if(base: SimulationInputInterface, variations: dict[str, dict]) -> WhatIf:
+def what_if(base: SimulationInput, variations: dict[str, dict]) -> WhatIf:
     """
     Run `base` and each named variation (a dict of input field overrides, any DTO).
 
@@ -37,6 +37,6 @@ def what_if(base: SimulationInputInterface, variations: dict[str, dict]) -> What
     )
 
 
-def cash_ladder(base: SimulationInputInterface, amounts: list[float]) -> WhatIf:
+def cash_ladder(base: SimulationInput, amounts: list[float]) -> WhatIf:
     """The 'more cash' simulation: the same contract with increasing cash at signing."""
     return what_if(base, {f"cash {amount:,.2f}": {"cash_upfront": amount} for amount in amounts})

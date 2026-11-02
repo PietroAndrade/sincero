@@ -10,7 +10,7 @@ def brl(value: float) -> str:
 
 
 def report(r: SimulationResult) -> str:
-    inp, dp, ci, cg, tl = r.input.contract(), r.down_payment, r.construction_interest, r.credit_gap, r.timeline
+    inp, dp, ci, cg, tl = r.input.contract, r.down_payment, r.construction_interest, r.credit_gap, r.timeline
     lines = [
         "=" * 72,
         f"🏠 {inp.name}  |  {brl(inp.list_price)}  |  {inp.months_remaining} months remaining",
@@ -46,6 +46,6 @@ def comparison_table(results: list[SimulationResult]) -> str:
         f"{brl(r.mortgage.corrected):>16}{brl(r.construction_interest.total):>13}"
         f"{brl(r.sac.first_installment):>12}{brl(r.sac.min_income):>14}"
         for r in results
-        for c in [r.input.contract()]
+        for c in [r.input.contract]
     ]
     return "\n".join([header, *rows])

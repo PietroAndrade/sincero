@@ -1,39 +1,40 @@
 """
 Input validation rules, one small validator per concern.
 
-Validators read the inputs through the interface's DTO accessors (`contract()`,
-`market()`, `bank_credit()`); each one touches a single DTO. Every validator implements `InputValidator.validate(inp)` and raises `SimulationError`
-with a user-facing message on the first rule it finds broken. `CompositeValidator`
-chains them in a fixed order, so the error a buyer sees is always the most fundamental
-one (property data before market data, market data before bank credit…).
+A validator receives only the DTO it judges — `Validator[ContractData]`,
+`Validator[MarketData]` or `Validator[BankCreditData]` — and raises `SimulationError` with a
+user-facing message on the first rule it finds broken. `CompositeValidator` chains validators
+of the same DTO in a fixed order, so the error a buyer sees is always the most fundamental one.
 
-`default_validator()` is what `SimulationInput.validate()` uses. Components that need a
-different policy (an API endpoint, a test) can build their own composite or pass a
-single validator instead.
+`ValidationPolicy` bundles one validator per DTO; `DEFAULT_POLICY` is the application's.
+`SimulationInput.validate()` applies a policy to its three DTOs. Components that need a
+different policy (an API endpoint, a test) build their own.
 """
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Generic, Iterable, TypeVar
 
 from .errors import SimulationError
-from .input_interface import SimulationInputInterface
+from .input_dto import BankCreditData, ContractData, MarketData
+
+T = TypeVar("T")
 
 
-class InputValidator(ABC):
-    """One validation concern. Raises `SimulationError` on the first broken rule."""
+class Validator(ABC, Generic[T]):
+    """One validation concern over one DTO. Raises `SimulationError` on the first broken rule."""
 
     @abstractmethod
-    def validate(self, inp: SimulationInputInterface) -> None:
+    def validate(self, data: T) -> None:
         ...
 
 
-# ----- property / contract ---------------------------------------------------
-class PropertyValidator(InputValidator):
+# ----- contract with the developer ------------------------------------------
+class PropertyValidator(Validator[ContractData]):
     """The property itself: price, time left until delivery, required down payment."""
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        c = inp.contract()
+    def validate(self, c: ContractData) -> None:
         if c.list_price <= 0:
             raise SimulationError("list price must be greater than zero")
         if c.months_remaining < 1:
@@ -42,31 +43,29 @@ class PropertyValidator(InputValidator):
             raise SimulationError("down payment percentage must be between 0 and 100")
 
 
-class UpfrontPaymentsValidator(InputValidator):
+class UpfrontPaymentsValidator(Validator[ContractData]):
     """
     What the buyer brings at signing. FGTS and cash may together cover the whole price
     (a cash purchase: nothing left to finance) but never more — there is nothing to pay
     the excess for, and the model would otherwise finance a negative balance.
     """
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        c = inp.contract()
+    def validate(self, c: ContractData) -> None:
         if c.fgts_upfront < 0 or c.cash_upfront < 0:
             raise SimulationError("upfront payments must not be negative")
-        if inp.upfront() > c.list_price:
+        if c.upfront > c.list_price:
             raise SimulationError(
-                f"upfront payments of R$ {inp.upfront():,.2f} exceed the list price of R$ {c.list_price:,.2f}")
+                f"upfront payments of R$ {c.upfront:,.2f} exceed the list price of R$ {c.list_price:,.2f}")
 
 
-class DeveloperPlanValidator(InputValidator):
+class DeveloperPlanValidator(Validator[ContractData]):
     """
     The payment plan agreed with the developer: monthly installment and balloon months.
     Whether the installments and balloons actually cover the balance is a sizing
     question answered by `DownPaymentPlan`, not a shape question answered here.
     """
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        c = inp.contract()
+    def validate(self, c: ContractData) -> None:
         if c.developer_installment is not None and c.developer_installment < 0:
             raise SimulationError("the monthly developer installment must not be negative")
         for month in c.balloon_months:
@@ -79,47 +78,43 @@ class DeveloperPlanValidator(InputValidator):
 
 
 # ----- market ----------------------------------------------------------------
-class MarketRatesValidator(InputValidator):
+class MarketRatesValidator(Validator[MarketData]):
     """
     Annual rates that are compounded monthly. INCC may be negative (deflation) but an
     annual rate of −100% or below has no monthly equivalent; a bank never lends at a
     negative rate.
     """
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        m = inp.market()
+    def validate(self, m: MarketData) -> None:
         if m.incc_rate_pa <= -100:
             raise SimulationError("INCC rate must be greater than -100% per year")
         if m.bank_rate_pa < 0:
             raise SimulationError("bank interest rate must not be negative")
 
 
-class FinancingValidator(InputValidator):
+class FinancingValidator(Validator[MarketData]):
     """Terms of the bank financing after key handover."""
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        m = inp.market()
+    def validate(self, m: MarketData) -> None:
         if m.term_months < 1:
             raise SimulationError("financing term must be at least 1 month")
         if not 0 < m.income_commitment_ratio <= 1:
             raise SimulationError("income commitment ratio must be between 0 and 1")
 
 
-class ClosingCostsValidator(InputValidator):
+class ClosingCostsValidator(Validator[MarketData]):
     """ITBI and registry/deed, as percentages of the list price."""
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        m = inp.market()
+    def validate(self, m: MarketData) -> None:
         if m.itbi_pct < 0 or m.registry_pct < 0:
             raise SimulationError("closing cost percentages must not be negative")
 
 
 # ----- bank credit -----------------------------------------------------------
-class BankCreditValidator(InputValidator):
+class BankCreditValidator(Validator[BankCreditData]):
     """Pre-approved credit and the pro-soluto term used to pay any credit gap."""
 
-    def validate(self, inp: SimulationInputInterface) -> None:
-        b = inp.bank_credit()
+    def validate(self, b: BankCreditData) -> None:
         if b.pre_approved_credit is not None and b.pre_approved_credit < 0:
             raise SimulationError("pre-approved credit must not be negative")
         if b.pro_soluto_months < 1:
@@ -127,28 +122,28 @@ class BankCreditValidator(InputValidator):
 
 
 # ----- composition -----------------------------------------------------------
-class CompositeValidator(InputValidator):
-    """Runs validators in order; the first `SimulationError` raised wins."""
+class CompositeValidator(Validator[T]):
+    """Runs validators of the same DTO in order; the first `SimulationError` raised wins."""
 
-    def __init__(self, validators: Iterable[InputValidator]):
-        self.validators: tuple[InputValidator, ...] = tuple(validators)
+    def __init__(self, validators: Iterable[Validator[T]]):
+        self.validators: tuple[Validator[T], ...] = tuple(validators)
 
-    def validate(self, inp: SimulationInputInterface) -> None:
+    def validate(self, data: T) -> None:
         for validator in self.validators:
-            validator.validate(inp)
+            validator.validate(data)
 
 
-DEFAULT_VALIDATORS: tuple[InputValidator, ...] = (
-    PropertyValidator(),
-    UpfrontPaymentsValidator(),
-    DeveloperPlanValidator(),
-    MarketRatesValidator(),
-    FinancingValidator(),
-    ClosingCostsValidator(),
-    BankCreditValidator(),
+@dataclass(frozen=True)
+class ValidationPolicy:
+    """One validator per DTO. `SimulationInput.validate()` applies them contract → market → bank credit."""
+
+    contract: Validator[ContractData]
+    market: Validator[MarketData]
+    bank_credit: Validator[BankCreditData]
+
+
+DEFAULT_POLICY = ValidationPolicy(
+    contract=CompositeValidator([PropertyValidator(), UpfrontPaymentsValidator(), DeveloperPlanValidator()]),
+    market=CompositeValidator([MarketRatesValidator(), FinancingValidator(), ClosingCostsValidator()]),
+    bank_credit=CompositeValidator([BankCreditValidator()]),
 )
-
-
-def default_validator() -> InputValidator:
-    """The validation policy of the application: every rule, in the order above."""
-    return CompositeValidator(DEFAULT_VALIDATORS)

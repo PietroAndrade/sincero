@@ -6,18 +6,18 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from app.models import SimulationInput, SimulationInputInterface, SimulationResult, WhatIf
+from app.models import SimulationInput, SimulationResult, WhatIf
 from app.models.amortization import AmortizationSchedule, PriceSchedule, SacSchedule
 
 
-def input_to_dict(inp: SimulationInputInterface) -> dict:
+def input_to_dict(inp: SimulationInput) -> dict:
     """
     The input section of the payload: one flat object with every field of every DTO
     (contract, market, bank credit). The grouping is a model concern; the wire format and
     the CLI flags stay flat.
     """
-    data = {**asdict(inp.contract()), **asdict(inp.market()), **asdict(inp.bank_credit())}
-    data["balloon_months"] = list(inp.contract().balloon_months)
+    data = inp.to_dict()
+    data["balloon_months"] = list(inp.contract.balloon_months)
     return data
 
 
@@ -99,7 +99,7 @@ def simulation_to_dict(r: SimulationResult) -> dict:
 
 def summary_to_dict(r: SimulationResult) -> dict:
     """Flat, table/chart friendly figures — one row of a comparison."""
-    contract = r.input.contract()
+    contract = r.input.contract
     return {
         "name": contract.name,
         "list_price": contract.list_price,
