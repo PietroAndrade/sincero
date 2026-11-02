@@ -5,7 +5,7 @@
 grouped boundary, tests, and the `input_validation` feature.
 **Behaviour of valid inputs:** unchanged — every pre-existing scenario and unit test passes with the
 same figures; the JSON payload and the CLI flags are byte-for-byte the same.
-**Behaviour of invalid inputs:** six classes of input that used to crash or to produce a nonsense
+**Behaviour of invalid inputs:** seven classes of input that used to crash or to produce a nonsense
 report are now rejected with a clear message (see [What the CLI got wrong](#what-the-cli-got-wrong)).
 
 ## Why
@@ -36,9 +36,12 @@ Running the CLI with edge-case flags before the refactor:
 | `--itbi -3` / `--registry -1` | report with **negative** closing costs lowering the total | `error: closing cost percentages must not be negative`, exit 2 |
 | `--pre-approved -1000` | silently accepted (gap computed against a negative credit) | `error: pre-approved credit must not be negative`, exit 2 |
 | `--pro-soluto-months 0` | report saying `pro-soluto R$ 0,00 x 0` while showing a R$ 291 k credit gap | `error: pro-soluto term must be at least 1 month`, exit 2 |
+| `--cash 500000` (or `--fgts 300000 --cash 200000`) | report with a **negative** mortgage balance (R$ −60 k), negative construction interest and a negative SAC installment | `error: upfront payments of R$ 500,000.00 exceed the list price of R$ 440,000.00`, exit 2 |
 
 Everything that used to be valid still is, including the deliberate edge cases: `--incc -2`
-(deflation), `--incc 0`, `--bank-rate 0`, `--down-payment-pct 0` and `--down-payment-pct 100`.
+(deflation), `--incc 0`, `--bank-rate 0`, `--down-payment-pct 0`, `--down-payment-pct 100` and
+`--cash 440000` (FGTS + cash **equal** to the price is a cash purchase: mortgage, construction
+interest and bank installments all R$ 0, only the closing costs remain).
 
 ## The new shape
 
@@ -129,7 +132,7 @@ Each validator reads **one DTO** through the interface (`inp.contract()`, `inp.m
 | Validator | Reads | Rules |
 |---|---|---|
 | `PropertyValidator` | `contract()` | price > 0; months ≥ 1; **0 ≤ down payment % ≤ 100** (new) |
-| `UpfrontPaymentsValidator` | `contract()` | FGTS and cash not negative |
+| `UpfrontPaymentsValidator` | `contract()` + `upfront()` | FGTS and cash not negative; **FGTS + cash ≤ list price** (new) |
 | `DeveloperPlanValidator` | `contract()` | installment not negative; each balloon month in `1..months_remaining`; no repeats |
 | `MarketRatesValidator` | `market()` | **INCC > −100 %** (new); **bank rate ≥ 0** (new) |
 | `FinancingValidator` | `market()` | term ≥ 1; 0 < income ratio ≤ 1 |
@@ -165,7 +168,7 @@ not made here.
 
 ## Tests
 
-- `tests/test_validators.py` (new, 52 tests): the interface is abstract, has **only abstract
+- `tests/test_validators.py` (new): the interface is abstract, has **only abstract
   methods and no attributes**, and `SimulationInput` implements it; the DTOs are frozen, carry
   no behaviour, have unique field names and are routed by `FIELD_OWNER`; `from_dict`/`to_dict`
   round-trip and reject unknown fields; `with_overrides` crosses DTO boundaries and leaves the
@@ -174,18 +177,19 @@ not made here.
   own DTO; validators accept a stub implementation of the interface; boundary values are
   accepted; the composite stops at the first error and respects order; a custom policy can be
   injected.
-- `tests/test_models.py`: six new parametrised cases (one per new rule) end-to-end through
-  `simulate()`; immutability test extended to the composed object and its DTOs.
+- `tests/test_models.py`: seven new parametrised cases (one per new rule) end-to-end through
+  `simulate()`; a cash-purchase test (upfront = price → zero mortgage, zero interest, zero
+  installment); immutability test extended to the composed object and its DTOs.
 - `tests/test_cli_controller.py`: reads field names from the DTOs instead of `fields(SimulationInput)`.
-- `features/input_validation.feature`: 10 new scenarios (42 → 52), all written with the existing
+- `features/input_validation.feature`: new scenarios for every new rule, all written with the existing
   step vocabulary — nothing added to `features/steps/`. They cover each new rule through the
-  JSON-view gateway (pinning the API contract too) plus a positive scenario: a deflationary INCC
-  is valid and yields a negative hidden debt. `features_pt_br/validacao_de_entradas.feature`
+  JSON-view gateway (pinning the API contract too) plus two positive scenarios: a deflationary INCC
+  is valid and yields a negative hidden debt; paying the whole price at signing is a cash
+  purchase, not an error. `features_pt_br/validacao_de_entradas.feature`
   mirrors them (documentation only, not executed).
 
 ```
-make unit       104 passed
-make features   10 features, 52 scenarios, 384 steps passed
+make test       # unit + features — everything green, figures of every pre-existing scenario unchanged
 ```
 
 ## Adding a field or a rule from now on

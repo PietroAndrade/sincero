@@ -6,7 +6,7 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
 |---|---|---|
 | [1](tasks.md#m1-gherkin-feature-files) | Gherkin feature files describing the business scenarios (`backend/features/`) | ✅ |
 | [2](tasks.md#m2-python-engine-and-cli) | Workable Python engine + CLI | ✅ |
-| [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (52 scenarios, Allure labels); Portuguese feature files as documentation | ✅ |
+| [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ |
 | [4](tasks.md#m4-mvc-backend) | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ |
 | [5](tasks.md#m5-flask-api) | Flask API controller: `POST /api/simulate`, `/api/compare`, `/api/what-if`, `/api/cash-ladder`; API-level behave features | ⬜ |
 | [6](tasks.md#m6-react-front-end) | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |

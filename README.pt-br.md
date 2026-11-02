@@ -89,7 +89,7 @@ Docker Compose (marco 7). Veja [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — todos os cenários de negócio (52)
+make features                     # behave — todos os cenários de negócio
 make feature name=credit_gap      # um arquivo de feature
 make tags tag=@more-cash          # uma fatia por tag (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — invariantes do modelo, contrato da view, biblioteca de apoio

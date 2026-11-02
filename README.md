@@ -90,7 +90,7 @@ Docker Compose (milestone 7). See [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — all business scenarios (52)
+make features                     # behave — all business scenarios
 make feature name=credit_gap      # one feature file
 make tags tag=@more-cash          # a tag slice (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — model invariants, view contract, support library

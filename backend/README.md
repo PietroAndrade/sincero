@@ -59,7 +59,7 @@ python cli.py --price 440000 --months 19 --fgts 13000 \
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
 python cli.py --price 440000 --months 19 --json                  # full payload
 
-make features                      # behave — all 52 scenarios
+make features                      # behave — all business scenarios
 make feature name=credit_gap       # one feature
 make tags tag=@more-cash           # a slice
 make unit                          # pytest
