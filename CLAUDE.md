@@ -49,4 +49,4 @@ The business spec is Gherkin in `features/` (English, executed). `features_pt_br
 - `features/environment.py` builds the gateway once and resets the `SimulationWorld` before every scenario. Scenarios must pass alone and in any order. It also registers the custom step types `{x:Money}`, `{x:Percent}` and `{x:Metric}`.
 - Step vocabulary and model assumptions: `backend/features/README.md`. Backend layout: `backend/README.md`.
 
-Scratch files at the repo root (`simulate-sac.py`, the empty `simulate-ballon-in-the-midle.py`) and `backend/progress2.output` are not part of the application.
+`docs/reference/` keeps the early prototype scripts (`simulate-sac.py`, the empty `simulate-ballon-in-the-midle.py`); they are not part of the application.
