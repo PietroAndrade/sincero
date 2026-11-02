@@ -38,20 +38,21 @@ class OffPlanSimulator:
         self.input = inp.validate()
 
     def run(self) -> SimulationResult:
-        inp = self.input
-        incc, bank = MonthlyRate(inp.incc_rate_pa), MonthlyRate(inp.bank_rate_pa)
+        contract, market, credit = self.input.contract, self.input.market, self.input.bank_credit
+        incc, bank = MonthlyRate(market.incc_rate_pa), MonthlyRate(market.bank_rate_pa)
 
-        down_payment = DownPaymentPlan(inp, incc)
-        mortgage = MortgageBalance(inp, incc)
-        construction = ConstructionInterest(inp, mortgage, bank)
-        closing = ClosingCosts(inp)
-        sac = SacSchedule(mortgage.corrected, bank, inp.term_months, inp.income_commitment_ratio)
-        price = PriceSchedule(mortgage.corrected, bank, inp.term_months, inp.income_commitment_ratio)
-        credit_gap = CreditGap(inp, mortgage)
-        total_cost = TotalCost(inp, down_payment, mortgage, construction, closing)
+        # Each component receives only the DTO (or value) it needs.
+        down_payment = DownPaymentPlan(contract, incc)
+        mortgage = MortgageBalance(contract, incc)
+        construction = ConstructionInterest(mortgage, bank)
+        closing = ClosingCosts(contract.list_price, market)
+        sac = SacSchedule(mortgage.corrected, bank, market.term_months, market.income_commitment_ratio)
+        price = PriceSchedule(mortgage.corrected, bank, market.term_months, market.income_commitment_ratio)
+        credit_gap = CreditGap(credit, mortgage)
+        total_cost = TotalCost(contract.list_price, down_payment, mortgage, construction, closing)
         timeline = CashFlowTimeline(down_payment, construction, sac)
 
-        return SimulationResult(inp, incc, bank, down_payment, mortgage, construction, closing,
+        return SimulationResult(self.input, incc, bank, down_payment, mortgage, construction, closing,
                                 sac, price, credit_gap, total_cost, timeline)
 
 

@@ -26,7 +26,7 @@ class WhatIf:
 
 def what_if(base: SimulationInput, variations: dict[str, dict]) -> WhatIf:
     """
-    Run `base` and each named variation (a dict of SimulationInput overrides).
+    Run `base` and each named variation (a dict of input field overrides, any DTO).
 
     >>> what_if(inp, {"INCC 4%": {"incc_rate_pa": 4.0}, "R$ 30k cash": {"cash_upfront": 30_000}})
     """

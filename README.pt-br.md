@@ -53,6 +53,9 @@ python cli.py --name RA --price 440000 --months 19 --fgts 13000 \
 # Simulação "com mais dinheiro": o mesmo contrato com valores crescentes na assinatura
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
 
+# Custos de cartório, teto de renda e prazo do pro-soluto
+python cli.py --price 440000 --months 19 --itbi 3 --registry 1 --income-ratio 0.35 --pro-soluto-months 24
+
 # Payload JSON completo (mesmo formato que a API e o front-end usarão)
 python cli.py --price 440000 --months 19 --json
 
@@ -70,7 +73,12 @@ Todas as opções:
 | `--balloon-month` | mês de obra com balão (repetível); valor = saldo descoberto ÷ nº de balões | nenhum |
 | `--incc`, `--bank-rate` | INCC e taxa do banco (% ao ano) | 7,0 e 10,26 |
 | `--term` | prazo do financiamento bancário (meses) | 360 |
+| `--itbi`, `--registry` | ITBI e custos de registro/escritura (% do preço) | 2,0 e 0,5 |
+| `--income-ratio` | fração máxima da renda familiar que o banco aceita como parcela (0–1) | 0,30 |
 | `--pre-approved` | crédito pré-aprovado pelo banco na assinatura | saldo nominal |
+| `--pro-soluto-months` | meses para pagar à construtora um eventual gap de crédito | 12 |
+
+Os padrões são definidos uma única vez, nos DTOs de entrada do modelo (`ContractData`, `MarketData`, `BankCreditData`); `--help` os exibe.
 
 ### API e front-end web
 
@@ -81,7 +89,7 @@ Docker Compose (marco 7). Veja [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — todos os cenários de negócio (42)
+make features                     # behave — todos os cenários de negócio
 make feature name=credit_gap      # um arquivo de feature
 make tags tag=@more-cash          # uma fatia por tag (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — invariantes do modelo, contrato da view, biblioteca de apoio

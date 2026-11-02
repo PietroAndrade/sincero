@@ -1,16 +1,18 @@
 # Roadmap
 
+Each milestone number links to its task breakdown in [tasks.md](tasks.md).
+
 | # | Milestone | Status |
 |---|---|---|
-| 1 | Gherkin feature files describing the business scenarios (`backend/features/`) | ⬜ |
-| 2 | Workable Python engine + CLI | ⬜ |
-| 3 | BDD validation with **behave** (42 scenarios, Allure labels); Portuguese feature files as documentation | ⬜ |
-| 4 | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ⬜ |
-| 5 | Flask API controller: `POST /api/simulate`, `/api/compare`, `/api/what-if`, `/api/cash-ladder`; API-level behave features | ⬜ |
-| 6 | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |
-| 7 | Docker: `docker-compose` with backend, frontend (nginx), behave test service | ⬜ |
-| 8 | UI acceptance tests: behave + Playwright against the running stack | ⬜ |
-| 9 | Extensions: live INCC (FGV), TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ |
+| [1](tasks.md#m1-gherkin-feature-files) | Gherkin feature files describing the business scenarios (`backend/features/`) | ✅ |
+| [2](tasks.md#m2-python-engine-and-cli) | Workable Python engine + CLI | ✅ |
+| [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ |
+| [4](tasks.md#m4-mvc-backend) | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ |
+| [5](tasks.md#m5-flask-api) | Flask API controller: `POST /api/simulate`, `/api/compare`, `/api/what-if`, `/api/cash-ladder`; API-level behave features | ⬜ |
+| [6](tasks.md#m6-react-front-end) | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |
+| [7](tasks.md#m7-docker) | Docker: `docker-compose` with backend, frontend (nginx), behave test service | ⬜ |
+| [8](tasks.md#m8-ui-acceptance-tests) | UI acceptance tests: behave + Playwright against the running stack | ⬜ |
+| [9](tasks.md#m9-extensions) | Extensions: live INCC (FGV), TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ |
 
 ## Decisions taken (open questions from the handoff)
 

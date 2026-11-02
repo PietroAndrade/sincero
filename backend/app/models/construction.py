@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .inputs import SimulationInput
 from .mortgage import MortgageBalance
 from .rates import MonthlyRate
 
@@ -39,10 +38,10 @@ class ConstructionInterest:
     bank has already released to the developer. Nothing here amortizes the balance.
     """
 
-    def __init__(self, inp: SimulationInput, mortgage: MortgageBalance, bank: MonthlyRate):
-        release = LinearRelease(inp.months_remaining)
+    def __init__(self, mortgage: MortgageBalance, bank: MonthlyRate):
+        release = LinearRelease(mortgage.months)
         self.schedule: list[ConstructionCharge] = []
-        for k in range(1, inp.months_remaining + 1):
+        for k in range(1, mortgage.months + 1):
             share = release.at(k)
             released = mortgage.at_month(k) * share
             self.schedule.append(ConstructionCharge(k, share, released, released * bank.monthly))

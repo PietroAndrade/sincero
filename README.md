@@ -54,6 +54,9 @@ python cli.py --name RA --price 440000 --months 19 --fgts 13000 \
 # "More cash" simulation: the same contract with increasing cash at signing
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
 
+# Closing costs, income ceiling and pro-soluto term
+python cli.py --price 440000 --months 19 --itbi 3 --registry 1 --income-ratio 0.35 --pro-soluto-months 24
+
 # Full JSON payload (the same shape the API and the front-end will use)
 python cli.py --price 440000 --months 19 --json
 
@@ -71,7 +74,12 @@ Every option:
 | `--balloon-month` | construction month with a balloon (repeatable); amount = uncovered balance ÷ balloons | none |
 | `--incc`, `--bank-rate` | INCC and bank rate (% per year) | 7.0, 10.26 |
 | `--term` | bank financing term (months) | 360 |
+| `--itbi`, `--registry` | ITBI and registry/deed costs (% of price) | 2.0, 0.5 |
+| `--income-ratio` | max share of household income the bank accepts as installment (0–1) | 0.30 |
 | `--pre-approved` | credit pre-approved by the bank at signing | nominal balance |
+| `--pro-soluto-months` | months to pay the developer any credit gap | 12 |
+
+Defaults are defined once, in the model's input DTOs (`ContractData`, `MarketData`, `BankCreditData`); `--help` prints them.
 
 ### API and web front-end
 
@@ -82,7 +90,7 @@ Docker Compose (milestone 7). See [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — all business scenarios (42)
+make features                     # behave — all business scenarios
 make feature name=credit_gap      # one feature file
 make tags tag=@more-cash          # a tag slice (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — model invariants, view contract, support library

@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .errors import SimulationError
-from .inputs import SimulationInput
+from .input_dto import ContractData
 from .rates import MonthlyRate
 
 _CENT = 0.005
@@ -42,13 +42,13 @@ class DownPaymentPlan:
     Every payment in month k is corrected by the INCC factor `(1 + incc_pm)^k`.
     """
 
-    def __init__(self, inp: SimulationInput, incc: MonthlyRate):
-        self.required = inp.required_down_payment
-        self.upfront = inp.upfront
-        self.remaining = inp.remaining_down_payment
-        n = inp.months_remaining
+    def __init__(self, contract: ContractData, incc: MonthlyRate):
+        self.required = contract.required_down_payment
+        self.upfront = contract.upfront
+        self.remaining = contract.remaining_down_payment
+        n = contract.months_remaining
 
-        self.nominal_installment, self.balloons = self._size_payments(inp, n)
+        self.nominal_installment, self.balloons = self._size_payments(contract, n)
         balloon_by_month = {b.month: b.nominal for b in self.balloons}
         self.schedule: list[DeveloperPayment] = [
             DeveloperPayment(
@@ -60,13 +60,13 @@ class DownPaymentPlan:
             for k in range(1, n + 1)
         ]
 
-    def _size_payments(self, inp: SimulationInput, n: int) -> tuple[float, list[Balloon]]:
-        if inp.developer_installment is None:
-            if inp.balloon_months:
+    def _size_payments(self, contract: ContractData, n: int) -> tuple[float, list[Balloon]]:
+        if contract.developer_installment is None:
+            if contract.balloon_months:
                 raise SimulationError("a monthly developer installment is required to size the balloon payments")
             return self.remaining / n, []
 
-        installment = inp.developer_installment
+        installment = contract.developer_installment
         covered = installment * n
         missing = self.remaining - covered
         rounding = _CENT * n  # an installment rounded to the cent still "covers" the balance
@@ -75,12 +75,12 @@ class DownPaymentPlan:
                 f"monthly installments of R$ {covered:,.2f} exceed the down payment balance of R$ {self.remaining:,.2f}")
         if missing <= rounding:
             return installment, []
-        if not inp.balloon_months:
+        if not contract.balloon_months:
             raise SimulationError(
                 f"monthly installments of R$ {covered:,.2f} do not cover the down payment balance of "
                 f"R$ {self.remaining:,.2f}; R$ {missing:,.2f} is missing — add balloon months or raise the installment")
-        per_balloon = missing / len(inp.balloon_months)
-        return installment, [Balloon(month, per_balloon) for month in sorted(inp.balloon_months)]
+        per_balloon = missing / len(contract.balloon_months)
+        return installment, [Balloon(month, per_balloon) for month in sorted(contract.balloon_months)]
 
     @property
     def missing_amount(self) -> float:
