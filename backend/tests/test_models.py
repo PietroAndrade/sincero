@@ -81,6 +81,7 @@ def test_inputs_are_immutable(ra):
     ("itbi_pct", -3, "closing cost percentages must not be negative"),
     ("pre_approved_credit", -1000, "pre-approved credit must not be negative"),
     ("pro_soluto_months", 0, "pro-soluto term must be at least 1 month"),
+    ("cash_upfront", 500_000, r"upfront payments of R\$ 513,000.00 exceed the list price of R\$ 440,000.00"),
 ])
 def test_extra_validation_rules(ra, field, value, message):
     with pytest.raises(SimulationError, match=message):
@@ -94,6 +95,13 @@ def test_balloons_are_derived_from_the_uncovered_amount(ra):
     assert r.down_payment.nominal_balloon == pytest.approx(13_750)
     nominal_total = r.down_payment.nominal_installment * 19 + r.down_payment.missing_amount
     assert nominal_total == pytest.approx(r.down_payment.remaining)
+
+
+def test_paying_the_whole_price_upfront_is_a_cash_purchase(ra):
+    r = simulate(ra.with_overrides(fgts_upfront=0, cash_upfront=440_000, developer_installment=None, balloon_months=()))
+    assert r.mortgage.nominal == 0 and r.mortgage.corrected == 0
+    assert r.construction_interest.total == 0 and r.sac.first_installment == 0
+    assert r.total_cost.additional == pytest.approx(r.closing_costs.total)
 
 
 def test_installment_rounded_to_the_cent_counts_as_covering_the_balance(ra):

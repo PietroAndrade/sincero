@@ -119,6 +119,10 @@ def test_equality_and_hash_follow_the_dtos(ra):
     (PropertyValidator(), {"down_payment_pct": 150}, "down payment percentage must be between 0 and 100"),
     (UpfrontPaymentsValidator(), {"fgts_upfront": -1}, "upfront payments must not be negative"),
     (UpfrontPaymentsValidator(), {"cash_upfront": -1}, "upfront payments must not be negative"),
+    (UpfrontPaymentsValidator(), {"cash_upfront": 500_000},
+     r"upfront payments of R\$ 513,000.00 exceed the list price of R\$ 440,000.00"),
+    (UpfrontPaymentsValidator(), {"fgts_upfront": 300_000, "cash_upfront": 140_000.01},
+     r"upfront payments of R\$ 440,000.01 exceed the list price"),
     (DeveloperPlanValidator(), {"developer_installment": -1}, "the monthly developer installment must not be negative"),
     (DeveloperPlanValidator(), {"balloon_months": (0,)}, "balloon month 0 must be at least 1"),
     (DeveloperPlanValidator(), {"balloon_months": (24,)}, r"balloon month 24 is after delivery \(month 19\)"),
@@ -149,6 +153,7 @@ def test_each_validator_accepts_a_valid_contract(ra, validator):
     {"incc_rate_pa": 0.0}, {"bank_rate_pa": 0.0},
     {"down_payment_pct": 0.0}, {"down_payment_pct": 100.0},
     {"pre_approved_credit": 0.0},
+    {"fgts_upfront": 0.0, "cash_upfront": 440_000.0, "developer_installment": None, "balloon_months": ()},  # cash purchase
     {"developer_installment": 0.0, "balloon_months": (6,)},
     {"developer_installment": None, "balloon_months": ()},
 ])

@@ -43,12 +43,19 @@ class PropertyValidator(InputValidator):
 
 
 class UpfrontPaymentsValidator(InputValidator):
-    """What the buyer brings at signing."""
+    """
+    What the buyer brings at signing. FGTS and cash may together cover the whole price
+    (a cash purchase: nothing left to finance) but never more — there is nothing to pay
+    the excess for, and the model would otherwise finance a negative balance.
+    """
 
     def validate(self, inp: SimulationInputInterface) -> None:
         c = inp.contract()
         if c.fgts_upfront < 0 or c.cash_upfront < 0:
             raise SimulationError("upfront payments must not be negative")
+        if inp.upfront() > c.list_price:
+            raise SimulationError(
+                f"upfront payments of R$ {inp.upfront():,.2f} exceed the list price of R$ {c.list_price:,.2f}")
 
 
 class DeveloperPlanValidator(InputValidator):
