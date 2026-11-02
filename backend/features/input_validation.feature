@@ -38,6 +38,23 @@ Feature: Input validation
     When the buyer runs the simulation
     Then the simulation should be rejected with the error "upfront payments must not be negative"
 
+  @allure.label.suite:Validation @allure.label.subSuite:Contract
+  Scenario: FGTS and cash above the list price are rejected
+    Given a property "X" listed at R$ 440,000.00 with 19 months remaining until delivery
+    And the buyer pays R$ 300,000.00 of FGTS upfront
+    And the buyer pays R$ 200,000.00 in cash upfront
+    When the buyer runs the simulation
+    Then the simulation should be rejected with the error "upfront payments of R$ 500,000.00 exceed the list price of R$ 440,000.00"
+
+  @allure.label.suite:Validation @allure.label.subSuite:Contract
+  Scenario: Paying the whole list price at signing is a cash purchase, not an error
+    Given a property "X" listed at R$ 440,000.00 with 19 months remaining until delivery
+    And the buyer pays R$ 440,000.00 in cash upfront
+    When the buyer runs the simulation
+    Then the mortgage balance at delivery should be R$ 0.00
+    And the total construction interest should be R$ 0.00
+    And the SAC installment in month 1 should be R$ 0.00
+
   @allure.label.suite:Validation @allure.label.subSuite:MarketData
   Scenario Outline: Impossible market rates are rejected instead of crashing the simulation
     Given INCC at <incc>% per year and bank financing at <bank>% per year over <term> months

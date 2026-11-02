@@ -35,6 +35,21 @@ Funcionalidade: Validação de entradas
     Quando o comprador executa a simulação
     Então a simulação deve ser rejeitada com o erro "os pagamentos na assinatura não podem ser negativos"
 
+  Cenário: FGTS e dinheiro acima do preço de tabela são rejeitados
+    Dado um imóvel "X" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
+    E que o comprador paga R$ 300.000,00 de FGTS na assinatura
+    E o comprador paga R$ 200.000,00 em dinheiro na assinatura
+    Quando o comprador executa a simulação
+    Então a simulação deve ser rejeitada com o erro "os pagamentos na assinatura de R$ 500.000,00 excedem o preço de tabela de R$ 440.000,00"
+
+  Cenário: Pagar todo o preço de tabela na assinatura é uma compra à vista, não um erro
+    Dado um imóvel "X" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
+    E o comprador paga R$ 440.000,00 em dinheiro na assinatura
+    Quando o comprador executa a simulação
+    Então o saldo do financiamento na entrega deve ser R$ 0,00
+    E o total de juros de obra deve ser R$ 0,00
+    E a parcela da SAC no mês 1 deve ser R$ 0,00
+
   Esquema do Cenário: Taxas de mercado impossíveis são rejeitadas em vez de derrubar a simulação
     Dado INCC de <incc>% ao ano e financiamento bancário de <banco>% ao ano em <prazo> meses
     E um imóvel "X" anunciado por R$ 440.000,00 com 19 meses restantes até a entrega
