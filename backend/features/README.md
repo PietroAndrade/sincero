@@ -29,7 +29,7 @@ concept, outcomes in scenario names, twins collapsed into Outlines.
 |---|---|
 | Month numbering | Month 0 = signing (upfront). Months 1..N = the N months **remaining** until delivery. Month N = key handover. Bank installments start at N+1. |
 | Rates | Annual → monthly by compounding: `(1 + r)^(1/12) − 1`. |
-| Down payment | `list_price × pct`. Upfront (FGTS + cash) is deducted at signing; upfront above the down payment reduces the financed balance. |
+| Down payment | `list_price × pct`. Upfront (FGTS + cash) is deducted at signing; upfront above the down payment reduces the financed balance. Upfront above the list price is rejected; exactly the list price leaves a zero balance. |
 | Developer installments | Without a chosen installment: remaining down payment split in N equal nominal installments. With a chosen installment: `missing = remaining − installment × N` is split equally among the balloon months (the balloon is **derived**). Every payment in month k is multiplied by `(1 + incc_pm)^k`. An installment rounded to the cent (≤ half a cent × N) counts as covering the balance. |
 | Mortgage balance | `list_price − max(down_payment, upfront)`, corrected by `(1 + incc_pm)^N` at delivery ("hidden INCC debt"). |
 | Construction interest | The bank releases the balance evenly over the N months remaining: share k/N after month k. Interest in month k = `corrected_balance_k × (k/N) × bank_pm`. Never amortizes. Physical progress at signing is a [future feature](../../docs/future-features/physical-progress.md). |

@@ -1,14 +1,12 @@
 """The CLI exposes every model input and never re-declares the model's defaults."""
-from dataclasses import fields
-
 import pytest
 
 from app.controllers.cli_controller import FLAG_FIELDS, build_parser, input_from_args, main
-from app.models import SimulationInput
+from app.models import ContractData, SimulationInput, field_names
 
 
 def test_every_model_field_has_a_cli_flag():
-    model_fields = {f.name for f in fields(SimulationInput)}
+    model_fields = set(field_names())
     assert set(FLAG_FIELDS.values()) == model_fields, (
         f"fields without a flag: {model_fields - set(FLAG_FIELDS.values())}; "
         f"flags without a field: {set(FLAG_FIELDS.values()) - model_fields}")
@@ -17,7 +15,7 @@ def test_every_model_field_has_a_cli_flag():
 def test_cli_defaults_are_the_model_defaults():
     args = build_parser().parse_args(["--price", "440000", "--months", "19"])
     inp = input_from_args(args)
-    assert inp == SimulationInput("CUSTOM", 440_000, 19)
+    assert inp == SimulationInput(ContractData("CUSTOM", 440_000, 19))
 
 
 def test_closing_costs_income_ratio_and_pro_soluto_flags_reach_the_model():
@@ -25,8 +23,9 @@ def test_closing_costs_income_ratio_and_pro_soluto_flags_reach_the_model():
                                       "--income-ratio", "0.35", "--pro-soluto-months", "24",
                                       "--balloon-month", "6", "--balloon-month", "12", "--installment", "2500"])
     inp = input_from_args(args)
-    assert (inp.itbi_pct, inp.registry_pct, inp.income_commitment_ratio, inp.pro_soluto_months) == (3, 1, 0.35, 24)
-    assert inp.balloon_months == (6, 12) and inp.developer_installment == 2500
+    market, credit, contract = inp.market(), inp.bank_credit(), inp.contract()
+    assert (market.itbi_pct, market.registry_pct, market.income_commitment_ratio, credit.pro_soluto_months) == (3, 1, 0.35, 24)
+    assert contract.balloon_months == (6, 12) and contract.developer_installment == 2500
 
 
 def test_help_shows_model_defaults_once(capsys):

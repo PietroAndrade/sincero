@@ -78,7 +78,7 @@ Todas as opções:
 | `--pre-approved` | crédito pré-aprovado pelo banco na assinatura | saldo nominal |
 | `--pro-soluto-months` | meses para pagar à construtora um eventual gap de crédito | 12 |
 
-Os padrões são definidos uma única vez, no modelo (`SimulationInput`); `--help` os exibe.
+Os padrões são definidos uma única vez, nos DTOs de entrada do modelo (`ContractData`, `MarketData`, `BankCreditData`); `--help` os exibe.
 
 ### API e front-end web
 
@@ -89,7 +89,7 @@ Docker Compose (marco 7). Veja [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — todos os cenários de negócio (42)
+make features                     # behave — todos os cenários de negócio (52)
 make feature name=credit_gap      # um arquivo de feature
 make tags tag=@more-cash          # uma fatia por tag (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — invariantes do modelo, contrato da view, biblioteca de apoio

@@ -3,14 +3,14 @@ import json
 
 import pytest
 
-from app.models import SimulationInput, cash_ladder, compare, simulate
+from app.models import ContractData, SimulationInput, cash_ladder, compare, simulate
 from app.views import (comparison_to_dict, input_from_dict, input_to_dict, report, simulation_to_dict,
                        what_if_to_dict)
 
 
 @pytest.fixture
 def ra() -> SimulationInput:
-    return SimulationInput("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500, balloon_months=(6, 12))
+    return SimulationInput(ContractData("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500, balloon_months=(6, 12)))
 
 
 def test_input_round_trips_through_dict(ra):

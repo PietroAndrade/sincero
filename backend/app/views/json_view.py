@@ -6,13 +6,18 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from app.models import SimulationInput, SimulationResult, WhatIf
+from app.models import SimulationInput, SimulationInputInterface, SimulationResult, WhatIf
 from app.models.amortization import AmortizationSchedule, PriceSchedule, SacSchedule
 
 
-def input_to_dict(inp: SimulationInput) -> dict:
-    data = asdict(inp)
-    data["balloon_months"] = list(inp.balloon_months)
+def input_to_dict(inp: SimulationInputInterface) -> dict:
+    """
+    The input section of the payload: one flat object with every field of every DTO
+    (contract, market, bank credit). The grouping is a model concern; the wire format and
+    the CLI flags stay flat.
+    """
+    data = {**asdict(inp.contract()), **asdict(inp.market()), **asdict(inp.bank_credit())}
+    data["balloon_months"] = list(inp.contract().balloon_months)
     return data
 
 
@@ -20,7 +25,7 @@ def input_from_dict(data: dict) -> SimulationInput:
     """Inverse of input_to_dict — used by controllers to read a request body."""
     data = dict(data)
     data["balloon_months"] = tuple(int(m) for m in data.get("balloon_months", ()))
-    return SimulationInput(**data)
+    return SimulationInput.from_dict(data)
 
 
 def _schedule_to_dict(schedule: AmortizationSchedule) -> dict:
@@ -94,11 +99,12 @@ def simulation_to_dict(r: SimulationResult) -> dict:
 
 def summary_to_dict(r: SimulationResult) -> dict:
     """Flat, table/chart friendly figures — one row of a comparison."""
+    contract = r.input.contract()
     return {
-        "name": r.input.name,
-        "list_price": r.input.list_price,
-        "months_remaining": r.input.months_remaining,
-        "cash_upfront": r.input.cash_upfront,
+        "name": contract.name,
+        "list_price": contract.list_price,
+        "months_remaining": contract.months_remaining,
+        "cash_upfront": contract.cash_upfront,
         "developer_installment": r.down_payment.nominal_installment,
         "nominal_balloon": r.down_payment.nominal_balloon,
         "incc_on_down_payment": r.down_payment.incc_correction,

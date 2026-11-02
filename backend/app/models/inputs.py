@@ -1,77 +1,109 @@
-"""Input model of a simulation and its validation rules."""
+"""Input model of a simulation: the immutable composition of the three input DTOs."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
-from typing import Optional
+from collections import defaultdict
+from dataclasses import asdict, replace
+from typing import Any, Mapping
 
-from .errors import SimulationError
+from .input_dto import FIELD_OWNER, BankCreditData, ContractData, MarketData
+from .input_interface import SimulationInputInterface
+from .validators import InputValidator, default_validator
 
 
-@dataclass(frozen=True)
-class SimulationInput:
-    # Property / contract
-    name: str
-    list_price: float
-    months_remaining: int          # months left until the building is delivered (not its total duration)
-    down_payment_pct: float = 20.0
-    fgts_upfront: float = 0.0
-    cash_upfront: float = 0.0
-    # How the remaining down payment is paid to the developer. When `developer_installment`
-    # is None the balance is simply split in equal installments. When the buyer chooses an
-    # installment, whatever it does not cover is paid as balloons in `balloon_months`
-    # (the balloon amount is derived, never typed in).
-    developer_installment: Optional[float] = None
-    balloon_months: tuple[int, ...] = field(default_factory=tuple)
-    # Market
-    incc_rate_pa: float = 7.0
-    bank_rate_pa: float = 10.26
-    term_months: int = 360
-    itbi_pct: float = 2.0
-    registry_pct: float = 0.5
-    income_commitment_ratio: float = 0.30
-    # Bank credit
-    pre_approved_credit: Optional[float] = None
-    pro_soluto_months: int = 12
+class SimulationInput(SimulationInputInterface):
+    """
+    Everything a simulation needs: a `ContractData`, a `MarketData` and a `BankCreditData`.
 
-    def __post_init__(self):
-        object.__setattr__(self, "balloon_months", tuple(self.balloon_months))
+    It owns no values of its own. It composes the DTOs, derives the amounts several
+    components share, applies the validation policy and builds what-if copies. Immutable:
+    change it only through `with_overrides()`.
+    """
 
-    # ----- derived amounts shared by several components -------------------
-    @property
+    __slots__ = ("_contract", "_market", "_bank_credit")
+
+    def __init__(self, contract: ContractData, market: MarketData = MarketData(),
+                 bank_credit: BankCreditData = BankCreditData()):
+        object.__setattr__(self, "_contract", contract)
+        object.__setattr__(self, "_market", market)
+        object.__setattr__(self, "_bank_credit", bank_credit)
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SimulationInput":
+        """
+        Build from a flat `field -> value` mapping (a JSON body, parsed CLI flags). Each
+        field is routed to the DTO that owns it; an unknown field is a `TypeError`.
+        """
+        grouped = cls._group(data)
+        return cls(ContractData(**grouped[ContractData]), MarketData(**grouped[MarketData]),
+                   BankCreditData(**grouped[BankCreditData]))
+
+    def to_dict(self) -> dict[str, Any]:
+        """The flat `field -> value` mapping, inverse of `from_dict`."""
+        return {**asdict(self._contract), **asdict(self._market), **asdict(self._bank_credit)}
+
+    # ----- SimulationInputInterface: the data --------------------------------
+    def contract(self) -> ContractData:
+        return self._contract
+
+    def market(self) -> MarketData:
+        return self._market
+
+    def bank_credit(self) -> BankCreditData:
+        return self._bank_credit
+
+    # ----- SimulationInputInterface: derived amounts -------------------------
     def required_down_payment(self) -> float:
-        return self.list_price * self.down_payment_pct / 100.0
+        return self._contract.list_price * self._contract.down_payment_pct / 100.0
 
-    @property
     def upfront(self) -> float:
-        return self.fgts_upfront + self.cash_upfront
+        return self._contract.fgts_upfront + self._contract.cash_upfront
 
-    @property
     def remaining_down_payment(self) -> float:
-        return max(0.0, self.required_down_payment - self.upfront)
+        return max(0.0, self.required_down_payment() - self.upfront())
 
-    # ----- validation -----------------------------------------------------
-    def validate(self) -> "SimulationInput":
-        if self.list_price <= 0:
-            raise SimulationError("list price must be greater than zero")
-        if self.months_remaining < 1:
-            raise SimulationError("months remaining until delivery must be at least 1")
-        if self.term_months < 1:
-            raise SimulationError("financing term must be at least 1 month")
-        if not 0 < self.income_commitment_ratio <= 1:
-            raise SimulationError("income commitment ratio must be between 0 and 1")
-        if self.fgts_upfront < 0 or self.cash_upfront < 0:
-            raise SimulationError("upfront payments must not be negative")
-        if self.developer_installment is not None and self.developer_installment < 0:
-            raise SimulationError("the monthly developer installment must not be negative")
-        for month in self.balloon_months:
-            if month > self.months_remaining:
-                raise SimulationError(f"balloon month {month} is after delivery (month {self.months_remaining})")
-            if month < 1:
-                raise SimulationError(f"balloon month {month} must be at least 1")
-        if len(set(self.balloon_months)) != len(self.balloon_months):
-            raise SimulationError("balloon months must not repeat")
+    # ----- SimulationInputInterface: behaviour -------------------------------
+    def validate(self, validator: InputValidator | None = None) -> "SimulationInput":
+        """
+        Apply the validation policy (by default every rule in `validators.DEFAULT_VALIDATORS`)
+        and return self, so callers can chain: `OffPlanSimulator(inp.validate())`.
+        """
+        (validator or default_validator()).validate(self)
         return self
 
-    def with_overrides(self, **overrides) -> "SimulationInput":
+    def with_overrides(self, **overrides: Any) -> "SimulationInput":
         """A copy with some fields changed — the basis of every what-if."""
-        return replace(self, **overrides)
+        grouped = self._group(overrides)
+        return SimulationInput(
+            replace(self._contract, **grouped[ContractData]),
+            replace(self._market, **grouped[MarketData]),
+            replace(self._bank_credit, **grouped[BankCreditData]),
+        )
+
+    # ----- plumbing ------------------------------------------------------------
+    @staticmethod
+    def _group(data: Mapping[str, Any]) -> dict[type, dict[str, Any]]:
+        unknown = sorted(set(data) - set(FIELD_OWNER))
+        if unknown:
+            raise TypeError(f"unknown simulation input field(s): {', '.join(unknown)}")
+        grouped: dict[type, dict[str, Any]] = defaultdict(dict)
+        for name, value in data.items():
+            grouped[FIELD_OWNER[name]][name] = value
+        return grouped
+
+    def _parts(self) -> tuple[ContractData, MarketData, BankCreditData]:
+        return self._contract, self._market, self._bank_credit
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise AttributeError(f"{type(self).__name__} is immutable — use with_overrides()")
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError(f"{type(self).__name__} is immutable — use with_overrides()")
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SimulationInput) and self._parts() == other._parts()
+
+    def __hash__(self) -> int:
+        return hash(self._parts())
+
+    def __repr__(self) -> str:
+        return f"SimulationInput({self._contract!r}, {self._market!r}, {self._bank_credit!r})"

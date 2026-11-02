@@ -79,7 +79,7 @@ Every option:
 | `--pre-approved` | credit pre-approved by the bank at signing | nominal balance |
 | `--pro-soluto-months` | months to pay the developer any credit gap | 12 |
 
-Defaults are defined once, in the model (`SimulationInput`); `--help` prints them.
+Defaults are defined once, in the model's input DTOs (`ContractData`, `MarketData`, `BankCreditData`); `--help` prints them.
 
 ### API and web front-end
 
@@ -90,7 +90,7 @@ Docker Compose (milestone 7). See [ROADMAP.md](ROADMAP.md).
 
 ```bash
 cd backend
-make features                     # behave — all business scenarios (42)
+make features                     # behave — all business scenarios (52)
 make feature name=credit_gap      # one feature file
 make tags tag=@more-cash          # a tag slice (@construction, @financing, @what-if, @validation…)
 make unit                         # pytest — model invariants, view contract, support library

@@ -1,16 +1,16 @@
 """The balance transferred to the bank at delivery, corrected by INCC during construction."""
 from __future__ import annotations
 
-from .inputs import SimulationInput
+from .input_interface import SimulationInputInterface
 from .rates import MonthlyRate
 
 
 class MortgageBalance:
-    def __init__(self, inp: SimulationInput, incc: MonthlyRate):
+    def __init__(self, inp: SimulationInputInterface, incc: MonthlyRate):
         self._incc = incc
-        self.months = inp.months_remaining
+        self.months = inp.contract().months_remaining
         # Upfront above the required down payment reduces what is financed.
-        self.nominal = inp.list_price - max(inp.required_down_payment, inp.upfront)
+        self.nominal = inp.contract().list_price - max(inp.required_down_payment(), inp.upfront())
 
     def at_month(self, month: int) -> float:
         """INCC-corrected balance after `month` months of construction."""

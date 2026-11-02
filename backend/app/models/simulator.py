@@ -8,7 +8,7 @@ from .closing_costs import ClosingCosts
 from .construction import ConstructionInterest
 from .credit_gap import CreditGap
 from .down_payment import DownPaymentPlan
-from .inputs import SimulationInput
+from .input_interface import SimulationInputInterface
 from .mortgage import MortgageBalance
 from .rates import MonthlyRate
 from .timeline import CashFlowTimeline
@@ -17,7 +17,7 @@ from .total_cost import TotalCost
 
 @dataclass
 class SimulationResult:
-    input: SimulationInput
+    input: SimulationInputInterface
     incc: MonthlyRate
     bank: MonthlyRate
     down_payment: DownPaymentPlan
@@ -34,19 +34,19 @@ class SimulationResult:
 class OffPlanSimulator:
     """Runs the full off-plan model for one SimulationInput."""
 
-    def __init__(self, inp: SimulationInput):
+    def __init__(self, inp: SimulationInputInterface):
         self.input = inp.validate()
 
     def run(self) -> SimulationResult:
-        inp = self.input
-        incc, bank = MonthlyRate(inp.incc_rate_pa), MonthlyRate(inp.bank_rate_pa)
+        inp, market = self.input, self.input.market()
+        incc, bank = MonthlyRate(market.incc_rate_pa), MonthlyRate(market.bank_rate_pa)
 
         down_payment = DownPaymentPlan(inp, incc)
         mortgage = MortgageBalance(inp, incc)
         construction = ConstructionInterest(inp, mortgage, bank)
         closing = ClosingCosts(inp)
-        sac = SacSchedule(mortgage.corrected, bank, inp.term_months, inp.income_commitment_ratio)
-        price = PriceSchedule(mortgage.corrected, bank, inp.term_months, inp.income_commitment_ratio)
+        sac = SacSchedule(mortgage.corrected, bank, market.term_months, market.income_commitment_ratio)
+        price = PriceSchedule(mortgage.corrected, bank, market.term_months, market.income_commitment_ratio)
         credit_gap = CreditGap(inp, mortgage)
         total_cost = TotalCost(inp, down_payment, mortgage, construction, closing)
         timeline = CashFlowTimeline(down_payment, construction, sac)
@@ -55,5 +55,5 @@ class OffPlanSimulator:
                                 sac, price, credit_gap, total_cost, timeline)
 
 
-def simulate(inp: SimulationInput) -> SimulationResult:
+def simulate(inp: SimulationInputInterface) -> SimulationResult:
     return OffPlanSimulator(inp).run()

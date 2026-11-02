@@ -1,12 +1,12 @@
 """Structural invariants of the domain model that the business features do not spell out."""
 import pytest
 
-from app.models import SimulationError, SimulationInput, cash_ladder, simulate, what_if
+from app.models import ContractData, SimulationError, SimulationInput, cash_ladder, simulate, what_if
 
 
 @pytest.fixture
 def ra() -> SimulationInput:
-    return SimulationInput("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500, balloon_months=(6, 12))
+    return SimulationInput(ContractData("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500, balloon_months=(6, 12)))
 
 
 def test_schedules_end_with_zero_balance(ra):
@@ -38,7 +38,7 @@ def test_timeline_total_matches_components(ra):
 def test_cost_breakdown_base_column_adds_up_to_the_list_price(ra):
     for inp in (ra, ra.with_overrides(cash_upfront=100_000, developer_installment=None, balloon_months=())):
         r = simulate(inp)
-        assert sum(line.base_value for line in r.total_cost.lines) == pytest.approx(inp.list_price)
+        assert sum(line.base_value for line in r.total_cost.lines) == pytest.approx(inp.contract().list_price)
 
 
 def test_what_if_runs_each_variation(ra):
@@ -59,8 +59,12 @@ def test_cash_ladder_is_monotonic(ra):
 
 
 def test_inputs_are_immutable(ra):
-    with pytest.raises(Exception):
+    with pytest.raises(AttributeError):
         ra.list_price = 1  # type: ignore[misc]
+    with pytest.raises(AttributeError):
+        ra._contract = None  # type: ignore[misc]
+    with pytest.raises(Exception):
+        ra.contract().list_price = 1  # type: ignore[misc]
 
 
 @pytest.mark.parametrize("field,value,message", [
@@ -70,6 +74,13 @@ def test_inputs_are_immutable(ra):
     ("balloon_months", (0,), "balloon month 0 must be at least 1"),
     ("balloon_months", (6, 6), "balloon months must not repeat"),
     ("developer_installment", -1, "the monthly developer installment must not be negative"),
+    # Rules added with the validator refactor: these used to crash or to produce a nonsense result.
+    ("down_payment_pct", 150, "down payment percentage must be between 0 and 100"),
+    ("incc_rate_pa", -100, "INCC rate must be greater than -100% per year"),
+    ("bank_rate_pa", -1, "bank interest rate must not be negative"),
+    ("itbi_pct", -3, "closing cost percentages must not be negative"),
+    ("pre_approved_credit", -1000, "pre-approved credit must not be negative"),
+    ("pro_soluto_months", 0, "pro-soluto term must be at least 1 month"),
 ])
 def test_extra_validation_rules(ra, field, value, message):
     with pytest.raises(SimulationError, match=message):

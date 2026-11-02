@@ -12,9 +12,9 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import MISSING, fields
 
-from app.models import SimulationError, SimulationInput, cash_ladder, compare, simulate
+from app.models import (ContractData, SimulationError, SimulationInput, SimulationInputInterface, cash_ladder,
+                        compare, field_defaults, simulate)
 from app.views import comparison_table, report, simulation_to_dict, what_if_to_dict
 from app.views.text_view import brl
 
@@ -22,8 +22,8 @@ REFERENCE_PROPERTIES = [("SO", 300_000, 4), ("F", 396_000, 8), ("SV", 233_000, 1
                         ("F4", 320_400, 19), ("RA", 440_000, 19)]
 
 
-# CLI flag -> SimulationInput field. Defaults are NOT repeated here: they come from the
-# model (single source of truth) and are shown in --help.
+# CLI flag -> input field (of ContractData, MarketData or BankCreditData). Defaults are NOT
+# repeated here: they come from the model DTOs (single source of truth) and are shown in --help.
 FLAG_FIELDS = {
     "--name": "name",
     "--price": "list_price",
@@ -67,8 +67,8 @@ _TYPES = {"name": str, "months_remaining": int, "term_months": int, "pro_soluto_
 
 
 def model_defaults() -> dict:
-    """Default of every SimulationInput field that has one (read from the dataclass)."""
-    return {f.name: f.default for f in fields(SimulationInput) if f.default is not MISSING}
+    """Default of every input field that has one (read from the model DTOs)."""
+    return field_defaults()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -92,11 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
 def input_from_args(args: argparse.Namespace) -> SimulationInput:
     data = {field: getattr(args, field) for field in FLAG_FIELDS.values()}
     data["balloon_months"] = tuple(data["balloon_months"])
-    return SimulationInput(**data)
+    return SimulationInput.from_dict(data)
 
 
 def run_reference() -> str:
-    inputs = [SimulationInput(n, p, m, fgts_upfront=13_000) for n, p, m in REFERENCE_PROPERTIES]
+    inputs = [SimulationInput(ContractData(n, p, m, fgts_upfront=13_000)) for n, p, m in REFERENCE_PROPERTIES]
     results = compare(inputs)
     parts = ["=== REFERENCE PROPERTIES: 20% down payment, R$ 13,000 FGTS upfront ===", "",
              comparison_table(results), ""]
@@ -104,7 +104,7 @@ def run_reference() -> str:
     return "\n".join(parts)
 
 
-def run_cash_ladder(inp: SimulationInput, amounts: list[float], as_json: bool) -> str:
+def run_cash_ladder(inp: SimulationInputInterface, amounts: list[float], as_json: bool) -> str:
     ladder = what_if_to_dict(cash_ladder(inp, amounts))
     if as_json:
         return json.dumps(ladder, indent=2)

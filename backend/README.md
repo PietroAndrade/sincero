@@ -14,7 +14,10 @@ cash" simulations and a month-by-month cash-flow timeline.
 backend/
 ├── app/
 │   ├── models/                 # domain — pure Python, no I/O, no serialization
-│   │   ├── inputs.py           #   SimulationInput, Balloon, validation
+│   │   ├── input_dto.py        #   ContractData / MarketData / BankCreditData — frozen DTOs, the defaults
+│   │   ├── input_interface.py  #   SimulationInputInterface — pure ABC (methods only): the input contract
+│   │   ├── inputs.py           #   SimulationInput — immutable composition of the three DTOs
+│   │   ├── validators.py       #   InputValidator ABC + one small validator per concern
 │   │   ├── rates.py            #   annual -> monthly compounding
 │   │   ├── down_payment.py     #   DownPaymentPlan (installments + derived balloons, INCC-corrected)
 │   │   ├── mortgage.py         #   MortgageBalance (nominal vs corrected: the "hidden debt")
@@ -56,7 +59,7 @@ python cli.py --price 440000 --months 19 --fgts 13000 \
 python cli.py --price 440000 --months 19 --fgts 13000 --cash-ladder 0,30000,75000,100000
 python cli.py --price 440000 --months 19 --json                  # full payload
 
-make features                      # behave — all 42 scenarios
+make features                      # behave — all 52 scenarios
 make feature name=credit_gap       # one feature
 make tags tag=@more-cash           # a slice
 make unit                          # pytest
@@ -66,10 +69,14 @@ make report                        # Allure 3 report (npm install -g allure)
 ## Using the models directly
 
 ```python
-from app.models import SimulationInput, simulate, compare, cash_ladder
+from app.models import ContractData, MarketData, SimulationInput, simulate, compare, cash_ladder
 from app.views import simulation_to_dict, what_if_to_dict
 
-inp = SimulationInput("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500, balloon_months=(6, 12))
+inp = SimulationInput(ContractData("RA", 440_000, 19, fgts_upfront=13_000, developer_installment=2_500,
+                                   balloon_months=(6, 12)),
+                      MarketData(incc_rate_pa=7.0))     # MarketData() and BankCreditData() default when omitted
+inp = SimulationInput.from_dict({"name": "RA", "list_price": 440_000, "months_remaining": 19})  # flat form (JSON/CLI)
+inp.contract().list_price, inp.market().incc_rate_pa     # the DTOs; inp.required_down_payment() etc. are derived
 result = simulate(inp)
 result.mortgage.hidden_incc_debt            # typed access
 result.down_payment.nominal_balloon         # derived: (remaining − 2,500 × 19) / 2
