@@ -1,12 +1,12 @@
 # Decision: the API is a protobuf service (Connect RPC); the backend stays Python, the front-end is TypeScript
 
-*Status: proposed, 2026-11-03, with a recommendation. Evidence:
+*Status: accepted, 2026-11-03. Evidence:
 [`../protobuf-languages.md`](../protobuf-languages.md) (the language comparison) and
 [`../experiments/protobuf-languages/connect/`](../experiments/protobuf-languages/connect/) (a
 TypeScript client on a Python Connect server, run end to end, the real model behind it).
-Supersedes, if accepted, the REST shape of [`../api-contract.md`](../api-contract.md) revision 6
-and the OpenAPI experiment in [`../experiments/openapi/`](../experiments/openapi/); the business rules, the JSON payload of a
-simulation and the behave suite are untouched.*
+Supersedes the REST shape of [`../api-contract.md`](../api-contract.md) revision 6 and the
+OpenAPI experiment in [`../experiments/openapi/`](../experiments/openapi/); the business rules,
+the JSON payload of a simulation and the behave suite are untouched.*
 
 ## Context
 
@@ -82,7 +82,7 @@ What is **the same in both columns**, and therefore not a reason to choose: the 
 single contract; Connect and gRPC-Web to the browser without a proxy; `protovalidate` rules in
 the `.proto`; the proto3 JSON mapping as the type rules; the error model; the OpenAPI story.
 
-## Recommendation
+## Decision
 
 **Keep the backend in Python, serve the API with Connect (`connectrpc`), generate the front-end
 client with `protoc-gen-es`.** Reasons, in order:
@@ -103,17 +103,17 @@ Revisit towards a TypeScript backend if a second reason appears (a team that onl
 TypeScript; a deployment that wants one runtime; the model growing a front-end-only twin for
 "instant" what-ifs, which would be the moment to make TypeScript the one implementation).
 
-## What changes in the contract if accepted
+## What changes in the contract
 
 The *figures* and the payload of a simulation do not change; the *surface* does. Revision 7 of
-`api-contract.md` would record:
+`api-contract.md` records:
 
 | Today (REST, revision 6) | With Connect |
 |---|---|
 | `POST /api/simulations`, `GET /api/simulations/{id}[/{path}]`, `GET`/`POST /api/comparisons`, `POST …/what-if`, `…/cash-ladder`, `GET /api/fields` | `service Simulations { CreateSimulation, GetSimulation, GetNode, GetComparison, CreateComparison, CreateWhatIf, CreateCashLadder, ListFields }` at `/sincero.Simulations/<Rpc>`; the reads are `NO_SIDE_EFFECTS` → HTTP `GET`, cacheable |
-| `{path}` into the payload, `?fields=` | `GetNode(id, path, fields)` returning the node as JSON bytes (the experiment), or — better typed — one RPC per section (`GetMortgage`, `GetTimeline`, …) with `google.protobuf.FieldMask` for the projection; the whole payload stays `GetResult` |
+| `{path}` into the payload, `?fields=` | typed messages for the ten sections of the payload, one RPC returning the whole typed result, and a `google.protobuf.FieldMask` for the projection (question 1) |
 | Shape rules 2–7, `400` with `code`/`field`/`index` | the proto3 JSON mapping (strings for numbers accepted; `null` = unset; camelCase accepted; unknown keys refused by configuration) + `buf.validate` rules; violations are Connect `invalid_argument` errors with `google.rpc.BadRequest` field violations in `details` |
-| `422 invalid_input` with the model's message | `invalid_argument` with the same message (the experiment) — or `failed_precondition` to keep the shape/business distinction; to decide |
+| `422 invalid_input` with the model's message | `invalid_argument` with the same message and an `ErrorInfo` detail (question 2) |
 | `404`, `405`, `413`, `415`, `500` bodies | Connect error codes (`not_found`, `unimplemented`, `resource_exhausted`, `internal`) with the protocol's JSON body `{code, message, details}`; HTTP statuses follow the protocol's mapping |
 | `X-Request-Id`, `Location`, content-addressed ids, lifetime | ids and lifetime unchanged; request ids as an interceptor; `Location` has no equivalent (the response carries the id) |
 | `openapi.yaml` hand-written + generated block | `protoc-gen-connect-openapi` generates OpenAPI 3.1 from the service, including `buf.validate` constraints as schema keywords — **not verified here** (a Go binary, GitHub-distributed; unreachable from the sandbox). Until verified, the `.proto` itself is the reference and `buf`'s generated docs are the human-readable form |
@@ -140,7 +140,72 @@ The *figures* and the payload of a simulation do not change; the *surface* does.
   are retired; the API ceilings (`≤ 600`) and the model's rules (`≥ 1`) then live in one place.
 - New dependencies: `connectrpc`, `protobuf-py`, `protovalidate`, an ASGI server (runtime);
   `protoc-gen-py`, `protoc-gen-connectrpc` (dev). Flask and `flask-cors` go.
-- Open: per-section typed RPCs vs a generic `GetNode`; `invalid_argument` vs
-  `failed_precondition` for the model's rules; verifying `protoc-gen-connect-openapi` on a
-  machine with GitHub access; `required` fields as `optional` + `protovalidate` to close the
-  implicit-presence trap.
+- Still to verify, outside this decision: `protoc-gen-connect-openapi` on a machine with GitHub
+  access.
+
+## The three open questions, answered
+
+### 1. How the parts of a result are read: typed messages and a field mask
+
+**Choice.** The ten sections of the payload (`simulation_to_dict`: `input`, `rates`,
+`down_payment`, `mortgage`, `construction_interest`, `closing_costs`, `credit_gap`,
+`total_cost`, `timeline` and the financing section) become typed messages. One RPC returns the
+whole typed result, and a `google.protobuf.FieldMask` projects it.
+
+**Reason.** The generic RPC of the experiment (`GetNode(id, path, fields)`) returns the node as
+JSON bytes: in [`connect/output.txt`](../experiments/protobuf-languages/connect/output.txt)
+(the `GetNode` call) the reply is `{"json":"eyJub21…"}`, base64 of untyped JSON. The TypeScript
+client gets no type for any figure the charts of milestone 6 read, and removing that loss is
+much of the reason for moving to protobuf. Typed messages cost more: they mirror
+`simulation_to_dict` field by field and must change with it. They stay in step through a test
+(task 5.8) that builds the typed result and the dict from the same simulation and compares them,
+so the behave suite, which pins the dict, pins the messages too.
+
+**Rejected.** The generic `GetNode` RPC returning JSON bytes: cheaper to write, but it moves the
+payload's shape out of the `.proto`, back into prose and into hand-typed client code.
+
+### 2. The Connect code of a failed model rule: `invalid_argument`
+
+**Choice.** `invalid_argument` for both a rule of the `.proto` and a rule of the model. A detail
+tells them apart: a `google.rpc.BadRequest` with the field violations when a `buf.validate` rule
+fails, and an `ErrorInfo` with the reason `invalid_input` and the model's message when
+`SimulationError` is raised. A client branches on the detail type: `BadRequest` marks a field,
+`ErrorInfo` shows a message. `failed_precondition` is kept for a state the service does not have
+yet.
+
+**Reason.** Every model rule concerns only the values sent (`months_remaining >= 1`, FGTS plus
+cash within the list price); none depends on the state of the system. `failed_precondition`
+means "retry after the state is fixed", which is false here. The experiment already returns the
+model's text verbatim as `invalid_argument`
+([`connect/output.txt`](../experiments/protobuf-languages/connect/output.txt), lines 1-2, and
+the `months_remaining 0` lines of the round trip).
+
+**Rejected.** `failed_precondition` for the model's rules, to keep the `400`/`422` distinction as
+two codes. The distinction survives as the detail type, without a code that promises a retry.
+
+### 3. The "absent" trap: plain scalars and rules that reject zero
+
+**Choice.** Required fields stay plain scalars and `protovalidate` rejects the zero value. The
+generator and the TypeScript types stay as they are.
+
+**Reason.** In proto3 a plain scalar cannot tell zero from missing, and `to_json()` drops zero
+values; that is how `months_remaining: 0` became a `500` in the experiment
+([`connect/README.md`](../experiments/protobuf-languages/connect/README.md), lines 28-29, and
+the presence check in `connect/server/connect_server.py`). For a required field whose zero is
+never valid, "zero" and "missing" are the same refusal, so presence does not need to be known.
+The `optional` route would change the generated Python and TypeScript for fields that need no
+distinction; converting field by field keeps the conversion that failed.
+
+| Required field (no default in [`simulation_input.proto`](../../backend/proto/sincero/simulation_input.proto)) | Rule that rejects its zero value |
+|---|---|
+| `list_price` | `double.gt = 0` (as in [`sincero_rules.proto`](../experiments/protobuf-languages/proto/sincero_rules.proto)) |
+| `months_remaining` | `int32.gte = 1` (with the API ceiling `lte = 600`) |
+| `name` | none needed: the empty string is the unnamed simulation, and the service resolves it to `"CUSTOM"` ([contract](../api-contract.md), field table), so absent and `""` mean the same thing |
+
+`balloon_months` is `repeated`, not required: empty is its default. Any new required field is
+added to this table with its rule, or is declared `optional` with a default.
+
+**Rejected.** `optional` plus `required`, and field-by-field conversion, for the reasons above.
+The test that proves the rules refuse `months_remaining: 0` and `list_price: 0` before the model
+(task 5.3, item 2) lives with the experiment's tests in
+`docs/experiments/protobuf-languages/python/`.
