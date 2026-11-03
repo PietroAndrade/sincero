@@ -1,1 +1,8 @@
-"""Controllers: CLI today, Flask API blueprint in milestone 5."""
+"""
+Controllers: the CLI (`cli_controller.py`) and the HTTP API.
+
+`api_requests.py` is the API's request side — the shape rules of `docs/api-contract.md` that
+turn a parsed JSON body into simulation inputs (`400`, with `code`/`field`/`index`) and run
+the model on them (`422`). It has no Flask dependency; the Flask blueprint (milestone 5)
+parses the body, calls it and maps `ApiError` to a response.
+"""

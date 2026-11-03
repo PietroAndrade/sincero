@@ -7,7 +7,9 @@ comparisons with a reference row; revision 5 gave the [cash ladder](#cash-ladder
 and, reversing revision 4, a route of its own; revision 6 specifies the
 [error handling](#errors) — every `400` case with a stable `code`, the API limits, and what a
 `500` is and is not. Every endpoint of milestone 5 is now specified.
-Decision records: [decisions/what-if-as-comparison.md](decisions/what-if-as-comparison.md).*
+Decision records: [decisions/what-if-as-comparison.md](decisions/what-if-as-comparison.md),
+[decisions/field-specs-from-dtos.md](decisions/field-specs-from-dtos.md) (the shape layer's field
+specs and `GET /api/fields`, implemented in `app/controllers/api_requests.py`).*
 
 The Flask controller is a second entry point to the same models and views the CLI uses. This
 document fixes what a client may rely on — routes, request shape, response shapes, status codes,
