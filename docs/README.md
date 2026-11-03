@@ -2,10 +2,12 @@
 
 | Document | Purpose |
 |---|---|
+| [api-contract.md](api-contract.md) | **Milestone 5**: the HTTP contract of the simulation resource — `POST /api/simulations` creates, `GET /api/simulations/{id}[/path]` reads one node of the payload (`?fields=` to pick keys), `GET /api/fields` lists the inputs — `GET`/`POST /api/comparisons` puts simulations side by side, `?relative_to=` / `POST /api/simulations/{id}/what-if` turn a comparison into a what-if, and `POST /api/simulations/{id}/cash-ladder` is its validated preset — with lifetime, a full error specification (one `code` per cause, API limits, the `500` policy), the evaluation of the route options and the reasoning behind each choice |
 | [future-features/physical-progress.md](future-features/physical-progress.md) · [pt-br](future-features/physical-progress.pt-br.md) | Modelling the building's physical progress at signing (not in scope today) |
 | [simulation-input-split.md](simulation-input-split.md) | **Summary**: why and how `SimulationInput` was split into DTOs, a pure interface and small validators |
 | [simulation-input-refactor.md](simulation-input-refactor.md) | Full design: the three input DTOs, the methods-only interface, `SimulationInput` as a frozen dataclass, per-DTO validators, components receiving only the DTO they need; the CLI crashes it fixed |
 | [decisions/reject-upfront-above-list-price.md](decisions/reject-upfront-above-list-price.md) | Why FGTS + cash above the list price is rejected |
+| [decisions/what-if-as-comparison.md](decisions/what-if-as-comparison.md) | Why the API has no `/api/what-if`: a what-if is a comparison with a reference row, variations are derived from a stored simulation, labels stay off the wire |
 | [reference/](reference/) | Early prototype scripts kept for reference, not part of the application |
 | [../ROADMAP.md](../ROADMAP.md) | Milestones and decisions |
 | [../backend/features/README.md](../backend/features/README.md) | Business model assumptions and step vocabulary |
