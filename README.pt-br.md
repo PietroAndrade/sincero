@@ -26,7 +26,6 @@ custos de cartório, as parcelas SAC/PRICE após as chaves, o gap de crédito no
 │   ├── support/              biblioteca de apoio do behave (sem imports do behave)
 │   └── tests/                testes unitários pytest
 ├── docs/                     notas de projeto e funcionalidades futuras
-├── context.md, handoff-*.md  contexto de negócio original
 └── ROADMAP.md                marcos e decisões
 ```
 

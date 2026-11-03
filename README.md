@@ -27,7 +27,6 @@ cash on the table.
 │   ├── support/              behave support library (no behave imports)
 │   └── tests/                pytest unit tests
 ├── docs/                     design notes and future features
-├── context.md, handoff-*.md  original business context
 └── ROADMAP.md                milestones and decisions
 ```
 

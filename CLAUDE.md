@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). Only the Python backend (milestones 1–4) exists; the Flask API, React front-end and Docker are planned (see `ROADMAP.md`). `context.md` and `handoff-*.md` hold the original business context (Portuguese/English). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
+SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). Only the Python backend (milestones 1–4) exists; the Flask API, React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
 
 Everything lives under `backend/` (Python 3.11+); run all commands from there.
 
