@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.7.0 -- /workspace/backend/.venv/bin/python
+rootdir: /workspace
+collecting ... collected 15 items
+
+test_experiment.py::test_the_generated_message_is_not_a_dto_but_carries_presence_and_the_amounts_follow PASSED [  6%]
+test_experiment.py::test_the_proto_defaults_groups_and_nullability_are_readable_from_the_option PASSED [ 13%]
+test_experiment.py::test_resolve_applies_the_defaults_and_reports_missing_required_fields PASSED [ 20%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body0] PASSED [ 26%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body1] PASSED [ 33%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body2] PASSED [ 40%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body3] PASSED [ 46%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body4] PASSED [ 53%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body5] PASSED [ 60%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body6] PASSED [ 66%]
+test_experiment.py::test_proto3_json_refuses_what_the_contract_refuses[body7] PASSED [ 73%]
+test_experiment.py::test_proto3_json_accepts_what_the_contract_refuses PASSED [ 80%]
+test_experiment.py::test_a_huge_integer_is_a_python_exception_not_a_parse_error PASSED [ 86%]
+test_experiment.py::test_the_wire_stays_snake_case PASSED [ 93%]
+test_experiment.py::test_validation_rules_declared_in_the_proto_are_enforced PASSED [100%]
+
+============================== 15 passed in 0.28s ==============================

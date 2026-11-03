@@ -1,0 +1,60 @@
+
+> test
+> npm run build && node --test dist/test.js
+
+
+> build
+> tsc -p tsconfig.json
+
+TAP version 13
+# Subtest: the generated type is the DTO: a plain object, camelCase, optional fields undefined when absent
+ok 1 - the generated type is the DTO: a plain object, camelCase, optional fields undefined when absent
+  ---
+  duration_ms: 3.411563
+  type: 'test'
+  ...
+# Subtest: the .proto's defaults, groups and nullability are readable from the custom option
+ok 2 - the .proto's defaults, groups and nullability are readable from the custom option
+  ---
+  duration_ms: 0.815182
+  type: 'test'
+  ...
+# Subtest: resolve applies the defaults and reports missing required fields
+ok 3 - resolve applies the defaults and reports missing required fields
+  ---
+  duration_ms: 0.890538
+  type: 'test'
+  ...
+# Subtest: proto3 JSON mapping: what it refuses that the contract refuses
+ok 4 - proto3 JSON mapping: what it refuses that the contract refuses
+  ---
+  duration_ms: 1.034966
+  type: 'test'
+  ...
+# Subtest: proto3 JSON mapping: what it accepts that the contract refuses
+ok 5 - proto3 JSON mapping: what it accepts that the contract refuses
+  ---
+  duration_ms: 0.830292
+  type: 'test'
+  ...
+# Subtest: the wire stays snake_case
+ok 6 - the wire stays snake_case
+  ---
+  duration_ms: 1.577796
+  type: 'test'
+  ...
+# Subtest: validation rules declared in the .proto are enforced (protovalidate)
+ok 7 - validation rules declared in the .proto are enforced (protovalidate)
+  ---
+  duration_ms: 72.157274
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 421.212441

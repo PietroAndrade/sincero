@@ -2,3 +2,4 @@
 behave>=1.2.6
 allure-behave>=2.13
 pytest>=8.0
+grpcio-tools>=1.60        # protoc, for `make dto` and tests/test_gen_dto.py

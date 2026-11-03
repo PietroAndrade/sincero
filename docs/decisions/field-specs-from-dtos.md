@@ -2,7 +2,10 @@
 
 *Status: accepted on 2026-11-03, implemented in `app/controllers/api_requests.py`
 (`FieldSpec`, `FIELD_SPECS`, `field_specs()`), pinned by `tests/test_api_requests.py`. The
-Flask route `GET /api/fields` itself is milestone 5.*
+Flask route `GET /api/fields` itself is milestone 5. Since
+[input-fields-from-proto](input-fields-from-proto.md) the DTOs' fields are themselves generated from
+`backend/proto/sincero/simulation_input.proto`; the specs still read the DTOs, so the chain is
+`.proto` → DTOs → `FieldSpec` → `/api/fields`, with the CLI reading the same DTOs.*
 
 ## Context
 

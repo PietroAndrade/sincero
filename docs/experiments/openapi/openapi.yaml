@@ -1,0 +1,1377 @@
+# SINCERO API — OpenAPI 3.1 description of docs/api-contract.md (revision 6).
+#
+# Hand-written, except the block marked `generated` under `components.schemas`, which
+# `gen_openapi.py` derives from `backend/proto/sincero/simulation_input.proto`.
+# `tests/test_openapi.py` keeps the whole file honest: it validates the document, regenerates
+# the block, checks the input schema against the shape layer's field specs, the error codes
+# against the codes the code raises, the response schemas against real payloads, and replays
+# every request example (`x-expect`) through `app/controllers/api_requests.py`.
+#
+# What a schema cannot state stays in docs/api-contract.md and is quoted in descriptions:
+# the order of checks, finiteness (`NaN` is not JSON), `null_not_allowed` as distinct from a
+# type error, ascending ladder amounts, the content-addressed id, lifetime, all-or-nothing
+# creation, `overrides` as a diff of resolved inputs.
+openapi: 3.1.0
+info:
+  title: SINCERO API
+  version: "0.6"
+  summary: Off-plan apartment cost simulator (Brazil)
+  description: |
+    A simulation is a **resource**: `POST /api/simulations` creates it from one flat input
+    object and returns its id; `GET /api/simulations/{id}` reads the headline figures and the
+    map of what else can be fetched; `GET /api/simulations/{id}/{path}` reads one node of the
+    payload tree. Comparisons put simulations side by side (`GET /api/comparisons?ids=…`);
+    with `relative_to` they become what-ifs; `POST …/what-if` and `POST …/cash-ladder` derive
+    variations from a stored simulation. Nothing is returned that was not asked for.
+
+    The id of a simulation is a hash of its resolved input, so creation is idempotent and a lost
+    server state is recovered by re-posting. Simulations expire a while after their last access
+    (`expires_at`); every URL of an expired id answers `404`.
+
+    Every response carries an `X-Request-Id` header (the client's own if it sent one, up to 64
+    printable ASCII characters; otherwise a server UUID). Every non-2xx response — including the
+    ones Flask would answer with HTML — is `application/json` with the `Error` body.
+
+    The business rules behind the figures are in `backend/features/README.md`; the reasoning
+    behind every route is in `docs/api-contract.md`.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://localhost:5000
+    description: the Flask backend (milestone 5)
+tags:
+  - name: simulations
+    description: One simulation as a resource — create it, read its parts.
+  - name: comparisons
+    description: Several simulations side by side; with a reference, a what-if.
+  - name: fields
+    description: The input fields, for building a form without re-declaring defaults.
+
+paths:
+  /api/fields:
+    get:
+      tags: [fields]
+      operationId: listFields
+      summary: The input fields, their types, defaults and units
+      description: |
+        One row per input field, in DTO order — the API's `--help`. Read from the model DTOs
+        (generated from `proto/sincero/simulation_input.proto`), so the form, the CLI and this
+        document describe the same defaults from the same source.
+      responses:
+        "200":
+          description: The fields, in DTO order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FieldSpec"
+              examples:
+                first-rows:
+                  value:
+                    - {name: name, group: contract, type: string, required: false, default: CUSTOM, unit: null}
+                    - {name: list_price, group: contract, type: number, required: true, default: null, unit: "R$"}
+                    - {name: months_remaining, group: contract, type: integer, required: true, default: null, unit: months}
+                    - {name: developer_installment, group: contract, type: "number|null", required: false, default: null, unit: "R$ per month"}
+                    - {name: balloon_months, group: contract, type: "integer[]", required: false, default: [], unit: months}
+                    - {name: incc_rate_pa, group: market, type: number, required: false, default: 7.5, unit: "% per year"}
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations:
+    post:
+      tags: [simulations]
+      operationId: createSimulation
+      summary: Validate, run and keep a simulation; return its id
+      description: |
+        The body is one flat object of input fields (the same fields as the CLI flags). Shape
+        rules are checked first, in this order, and the client sees the **first** broken one:
+        the body is an object; no unknown keys; `list_price` and `months_remaining` present; then
+        field by field in DTO order — `null` only where allowed, strict JSON type, finite, within
+        the API limits. Then the model validates and **simulates** the input (so sizing errors that
+        only surface while simulating are caught now, not on a later `GET`), stores the resolved
+        input and answers `201`.
+
+        Posting the same input twice yields the same id (the second `POST` is also `201` and
+        refreshes the lifetime). Numbers are normalised before hashing, so `2500` and `2500.0`
+        are the same input; two inputs that differ in any field, `name` included, are two
+        resources.
+      requestBody:
+        $ref: "#/components/requestBodies/SimulationInput"
+      responses:
+        "201":
+          description: Created. `Location` is the simulation's URL.
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Created"
+              examples:
+                created:
+                  value: {id: 3f9c2b7e1a4d5c6b8e0f1a2b3c4d5e6f, href: /api/simulations/3f9c2b7e1a4d5c6b8e0f1a2b3c4d5e6f}
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableInput"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      tags: [simulations]
+      operationId: getSimulation
+      summary: The resolved input, the headline summary and the map of sections
+      description: |
+        About 2.5 KB: what was simulated (`input`, every field with defaults filled in), the
+        headline figures (`summary`, the same row `/api/comparisons` returns), and `sections` —
+        one entry per payload node that can be fetched, with its `href` and a `fields` map of
+        *key → kind* computed from the actual payload (`array[19]` for 19 months remaining).
+        Reading refreshes `expires_at`.
+      responses:
+        "200":
+          description: The simulation resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationResource"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations/{id}/result:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      tags: [simulations]
+      operationId: getSimulationResult
+      summary: The whole payload — byte-for-byte `python cli.py … --json`
+      description: |
+        The dict of `simulation_to_dict`, no envelope. About 180 KB with the default term (97 % of
+        it is the two bank schedules and `timeline/months`); serve it gzip-compressed. This is the
+        node the behave suite's HTTP gateway reads, the one to export, and the one that guarantees
+        the API and the CLI never disagree. `result` is a reserved segment: `…/result/…` is `404`.
+      responses:
+        "200":
+          description: The full payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationPayload"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations/{id}/{path}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/path"
+    get:
+      tags: [simulations]
+      operationId: getSimulationNode
+      summary: One object or array node of the payload tree
+      description: |
+        The path is a path into the payload: segments are the JSON keys of `simulation_to_dict`,
+        verbatim, separated by `/` — `mortgage`, `financing/sac`, `timeline/months`,
+        `total_cost/breakdown`. The node must be an **object or an array**; a path that ends on
+        a scalar (`mortgage/hidden_incc_debt`) or does not exist (`financing/foo`,
+        `timeline/months/12`) is `404`. `?fields=` keeps only those keys — on an object it
+        filters the object, on an array of objects every row; a name that is not a key is `400`.
+        Order follows the payload, not the query.
+
+        Addressable nodes and their sizes (360-month term, 19 months remaining): `input` 0.4 KB,
+        `rates`, `mortgage`, `closing_costs` 0.1 KB, `down_payment` 2.2 KB (`/balloons`,
+        `/schedule`), `construction_interest` 2.4 KB (`/schedule`), `financing` **110 KB**
+        (`/sac`, `/price` 55 KB each — use `fields` for the summary; `/sac/schedule`,
+        `/price/schedule`), `credit_gap` 0.2 KB, `total_cost` 0.7 KB (`/breakdown`), `timeline`
+        **67 KB** (`/months`; `?fields=month,total` ≈ 17 KB).
+      parameters:
+        - $ref: "#/components/parameters/fields"
+      responses:
+        "200":
+          description: |
+            The node, exactly as it appears in `SimulationPayload` (see its section schemas),
+            projected by `fields` when given.
+          content:
+            application/json:
+              schema:
+                type: [object, array]
+                description: One of the section schemas of `SimulationPayload`, or one of their arrays; any subset of keys when `fields` is given.
+              examples:
+                mortgage:
+                  summary: GET …/mortgage
+                  value: {nominal_balance: 352000.0, corrected_balance: 391802.2973278101, hidden_incc_debt: 39802.29732781008}
+                sac-summary:
+                  summary: GET …/financing/sac?fields=first_installment,min_income
+                  value: {first_installment: 4290.330679696464, min_income: 14301.102265654881}
+                balloons:
+                  summary: GET …/down_payment/balloons
+                  value: [{month: 6, nominal: 13750.0}, {month: 12, nominal: 13750.0}]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations/{id}/what-if:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    post:
+      tags: [comparisons]
+      operationId: createWhatIf
+      summary: Create variations of a stored simulation; answer with the comparison relative to it
+      description: |
+        Each variation is a set of input-field overrides applied to the stored simulation's
+        resolved input (`{**base_input, **variation}`), with the types of `InputFields` — here
+        `null` on `developer_installment` / `pre_approved_credit` is a meaningful override, "back
+        to automatic sizing". A variation must not be empty (`{}` is `400`); one whose values
+        equal the base's is valid and yields the base's own id with `overrides: {}`.
+
+        `{id}` must exist (`404` before the body is read). Every variation is validated and
+        simulated before anything is stored; one bad variation fails the whole request with
+        `index`. On success the variations are stored, the base's lifetime is refreshed, and the
+        body is byte-for-byte what `GET` on the `Location` returns.
+      requestBody:
+        $ref: "#/components/requestBodies/WhatIfRequest"
+      responses:
+        "201":
+          description: Created. `Location` is `/api/comparisons?ids=…&relative_to={id}`.
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableInput"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/simulations/{id}/cash-ladder:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    post:
+      tags: [comparisons]
+      operationId: createCashLadder
+      summary: The "more cash at signing" sweep — a validated what-if preset
+      description: |
+        One rung per amount: `base.with_overrides(cash_upfront=amount)` — the amount is absolute,
+        not added to the base's cash. Amounts must be finite, **≥ 0** and **strictly increasing**
+        (`400` with `index` at the first offending one: a ladder is ascending by definition, and an
+        unsorted or repeated list is a client bug). Each rung is validated and simulated before
+        anything is stored — a rung whose FGTS + cash exceeds the list price is `422` with `index`.
+        The response is the what-if's; `python cli.py … --cash-ladder 0,30000,75000,100000` is
+        `POST /api/simulations` followed by this request.
+      requestBody:
+        $ref: "#/components/requestBodies/CashLadderRequest"
+      responses:
+        "201":
+          description: Created. `Location` is `/api/comparisons?ids=…&relative_to={id}`; rows are the rungs in ascending amount.
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableInput"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/comparisons:
+    get:
+      tags: [comparisons]
+      operationId: getComparison
+      summary: Summary rows of existing simulations, side by side; with `relative_to`, a what-if
+      description: |
+        A comparison is a *projection* of simulations that already exist: one `Summary` row per id,
+        in the order given (a repeated id repeats the row), each linking back to its simulation.
+        `href` always carries the full `ids` (and `relative_to`), never `fields`. A comparison lives
+        as long as its least-lived member; reading it refreshes every member's lifetime.
+
+        With `relative_to={id}` the same rows gain two columns — `overrides`, the input fields in
+        which the row's **resolved input differs** from the reference's (a diff, so a no-op
+        override is not listed and `{}` means "identical input"), and `delta`, row minus reference
+        for every numeric summary column — and the reference itself is returned as
+        `relative_to`. Labels are not part of the contract: `overrides` identifies a variation,
+        and a client renders the label it wants from it and from `GET /api/fields`.
+      parameters:
+        - $ref: "#/components/parameters/ids"
+        - $ref: "#/components/parameters/relative_to"
+        - $ref: "#/components/parameters/fields"
+      responses:
+        "200":
+          description: The comparison.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+              examples:
+                two-properties:
+                  $ref: "#/components/examples/comparison"
+                projected:
+                  summary: GET /api/comparisons?ids=…&fields=name,hidden_incc_debt
+                  value:
+                    href: /api/comparisons?ids=c47d4fcd08f29ff9832e80af20f56eec,c5becd9763ec702a854421a946cc6062
+                    rows:
+                      - {name: SO, hidden_incc_debt: 5474.189224721165}
+                      - {name: F, hidden_incc_debt: 14616.676665438164}
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      tags: [comparisons]
+      operationId: createComparison
+      summary: Create the simulations of a base + candidates; answer with the comparison
+      description: |
+        Each candidate is `{**base, **candidate}` and must satisfy every shape rule of
+        `POST /api/simulations` **after the merge** — `list_price` and `months_remaining` must be
+        present in `base` or in the candidate. Every merged input is validated and simulated
+        before anything is stored; one bad candidate fails the whole request (`index` says which)
+        and nothing is created. On success every candidate simulation is stored (the same ids as
+        if each had been posted alone) and the body is byte-for-byte what `GET` on the `Location`
+        returns. The five reference properties with R$ 13,000 of FGTS — `python cli.py` with no
+        arguments — is the canonical example.
+      requestBody:
+        $ref: "#/components/requestBodies/ComparisonRequest"
+      responses:
+        "201":
+          description: Created. `Location` is `/api/comparisons?ids=…`.
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+              examples:
+                two-properties:
+                  $ref: "#/components/examples/comparison"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableInput"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      description: A simulation id as returned by `POST` — opaque; clients must not parse it. Unknown or expired → `404`.
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{32}$"
+      example: 3f9c2b7e1a4d5c6b8e0f1a2b3c4d5e6f
+    path:
+      name: path
+      in: path
+      required: true
+      description: |
+        A path into the payload tree, `/`-separated JSON keys of `simulation_to_dict`
+        (`mortgage`, `financing/sac`, `down_payment/balloons`, `timeline/months`). May contain
+        `/`. Must end on an object or an array; `result` is reserved for the whole payload.
+      schema:
+        type: string
+        pattern: "^[a-z_]+(/[a-z_]+)*$"
+      example: financing/sac
+    fields:
+      name: fields
+      in: query
+      required: false
+      description: |
+        Comma-separated keys to keep: on an object the keys of the object, on an array of objects
+        the keys of every row, on a comparison the row columns (`id` and `href` may be dropped;
+        `overrides` and `delta` are selected whole). At most 50 names. A name that is not a key of
+        the node → `400 invalid_value`. Order in the response follows the payload, not the query.
+      schema:
+        type: string
+        pattern: "^[a-z_]+(,[a-z_]+)*$"
+      example: first_installment,min_income
+    ids:
+      name: ids
+      in: query
+      required: true
+      description: Comma-separated simulation ids, 1 to 20, order preserved; a repeated id repeats the row. Absent → `400 missing_field`; empty → `400 invalid_value`; unknown → `404 not_found`.
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{32}(,[0-9a-f]{32})*$"
+      example: c47d4fcd08f29ff9832e80af20f56eec,c5becd9763ec702a854421a946cc6062
+    relative_to:
+      name: relative_to
+      in: query
+      required: false
+      description: "The id of an existing simulation to measure every row against; turns the comparison into a what-if (`overrides`, `delta`, the `relative_to` row). It need not be in `ids`; if it is, that row has `overrides: {}` and an all-zero `delta`. Unknown → `404`."
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{32}$"
+
+  headers:
+    Location:
+      description: Where the result of the request lives — a simulation's URL, or the `GET /api/comparisons` URL that returns this very body.
+      schema:
+        type: string
+    X-Request-Id:
+      description: The client's own `X-Request-Id` if it sent one (up to 64 printable ASCII characters), otherwise a server-generated UUID. Quoted in `500` bodies as `request_id`.
+      schema:
+        type: string
+
+  requestBodies:
+    SimulationInput:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimulationInput"
+          examples:
+            ra:
+              summary: The reference property RA — R$ 440,000 in 19 months, R$ 13,000 of FGTS, R$ 2,500 a month and two balloons
+              value: {name: RA, list_price: 440000, months_remaining: 19, fgts_upfront: 13000, developer_installment: 2500, balloon_months: [6, 12]}
+              x-expect: {status: 201}
+            minimal:
+              summary: Only the required fields; every other field takes its default
+              value: {list_price: 440000, months_remaining: 19}
+              x-expect: {status: 201}
+            nulls-where-allowed:
+              summary: "`null` on the two nullable fields means absent"
+              value: {list_price: 440000, months_remaining: 19, developer_installment: null, pre_approved_credit: null}
+              x-expect: {status: 201}
+            not-an-object:
+              summary: The body must be a JSON object
+              value: [1, 2]
+              x-expect: {status: 400, code: wrong_type, field: body}
+            string-for-a-number:
+              summary: "`\"440000\"` is a string, not a number — no coercion"
+              value: {list_price: "440000", months_remaining: 19}
+              x-expect: {status: 400, code: wrong_type, field: list_price}
+            fraction-of-a-month:
+              summary: "`19.0` is an integer, `19.5` is not"
+              value: {list_price: 440000, months_remaining: 19.5}
+              x-expect: {status: 400, code: wrong_type, field: months_remaining}
+            unknown-field:
+              summary: "No typo tolerance: `field` names the first unknown key, the message lists them all"
+              value: {list_price: 440000, months_remaining: 19, fgts_upfrnt: 13000, foo: 1}
+              x-expect: {status: 400, code: unknown_field, field: fgts_upfrnt}
+            missing-field:
+              value: {list_price: 440000}
+              x-expect: {status: 400, code: missing_field, field: months_remaining}
+            null-not-allowed:
+              summary: "`null` is not a way to ask for the default; omit the key"
+              value: {list_price: 440000, months_remaining: 19, itbi_pct: null}
+              x-expect: {status: 400, code: null_not_allowed, field: itbi_pct}
+            out-of-range:
+              summary: Above the API limit (600 months)
+              value: {list_price: 440000, months_remaining: 5000}
+              x-expect: {status: 400, code: out_of_range, field: months_remaining}
+            too-many-balloons:
+              value: {list_price: 440000, months_remaining: 19, balloon_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61]}
+              x-expect: {status: 400, code: out_of_range, field: balloon_months}
+            balloon-item-wrong-type:
+              value: {list_price: 440000, months_remaining: 19, balloon_months: [6, "12"]}
+              x-expect: {status: 400, code: wrong_type, field: "balloon_months[1]"}
+            impossible-contract:
+              summary: Well-formed, but the model rejects it (`422`, message verbatim)
+              value: {list_price: 440000, months_remaining: 0}
+              x-expect: {status: 422, code: invalid_input}
+            balloons-need-an-installment:
+              summary: A sizing error that only surfaces while simulating is still caught on `POST`
+              value: {list_price: 440000, months_remaining: 19, balloon_months: [6, 12]}
+              x-expect: {status: 422, code: invalid_input}
+    ComparisonRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ComparisonRequest"
+          examples:
+            reference-properties:
+              summary: "`python cli.py` with no arguments: the five reference properties, 20 % down, R$ 13,000 of FGTS"
+              value:
+                base: {fgts_upfront: 13000}
+                candidates:
+                  - {name: SO, list_price: 300000, months_remaining: 4}
+                  - {name: F, list_price: 396000, months_remaining: 8}
+                  - {name: SV, list_price: 233000, months_remaining: 17}
+                  - {name: F4, list_price: 320400, months_remaining: 19}
+                  - {name: RA, list_price: 440000, months_remaining: 19}
+              x-expect: {status: 201}
+            missing-after-merge:
+              summary: The required fields must be present after the merge; `index` names the candidate
+              value: {candidates: [{name: SO, list_price: 300000}]}
+              x-expect: {status: 400, code: missing_field, field: "candidates[0].months_remaining", index: 0}
+            unknown-in-base:
+              value: {base: {fgts: 13000}, candidates: [{name: SO, list_price: 300000, months_remaining: 4}]}
+              x-expect: {status: 400, code: unknown_field, field: base.fgts}
+            no-candidates:
+              value: {candidates: []}
+              x-expect: {status: 400, code: out_of_range, field: candidates}
+            candidates-not-an-array:
+              value: {candidates: {list_price: 1}}
+              x-expect: {status: 400, code: wrong_type, field: candidates}
+            one-bad-candidate:
+              summary: All or nothing — the second candidate is impossible, nothing is created
+              value:
+                base: {fgts_upfront: 13000}
+                candidates:
+                  - {name: SO, list_price: 300000, months_remaining: 4}
+                  - {name: F, list_price: 396000, months_remaining: 0}
+              x-expect: {status: 422, code: invalid_input, index: 1}
+    WhatIfRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/WhatIfRequest"
+          examples:
+            three-variations:
+              summary: INCC at 4 %, R$ 30,000 more cash, both
+              value: {variations: [{incc_rate_pa: 4.0}, {cash_upfront: 30000}, {cash_upfront: 30000, incc_rate_pa: 4.0}]}
+              x-expect: {status: 201}
+            back-to-automatic-sizing:
+              summary: "`null` is a meaningful override here"
+              value: {variations: [{developer_installment: null}]}
+              x-expect: {status: 201}
+            empty-variation:
+              value: {variations: [{incc_rate_pa: 4.0}, {}]}
+              x-expect: {status: 400, code: invalid_value, field: "variations[1]", index: 1}
+            unknown-in-variation:
+              value: {variations: [{incc: 4.0}]}
+              x-expect: {status: 400, code: unknown_field, field: "variations[0].incc", index: 0}
+            impossible-variation:
+              value: {variations: [{incc_rate_pa: 4.0}, {incc_rate_pa: -150}]}
+              x-expect: {status: 422, code: invalid_input, index: 1}
+    CashLadderRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CashLadderRequest"
+          examples:
+            ladder:
+              summary: "`--cash-ladder 0,30000,75000,100000`"
+              value: {amounts: [0, 30000, 75000, 100000]}
+              x-expect: {status: 201}
+            not-increasing:
+              value: {amounts: [0, 30000, 30000]}
+              x-expect: {status: 400, code: invalid_value, field: "amounts[2]", index: 2}
+            negative:
+              value: {amounts: [0, -1]}
+              x-expect: {status: 400, code: out_of_range, field: "amounts[1]", index: 1}
+            empty:
+              value: {amounts: []}
+              x-expect: {status: 400, code: out_of_range, field: amounts}
+            above-the-list-price:
+              summary: A rung whose FGTS + cash exceeds the list price is the model's refusal, with `index`
+              value: {amounts: [0, 500000]}
+              x-expect: {status: 422, code: invalid_input, index: 1}
+
+  responses:
+    BadRequest:
+      description: |
+        The request cannot become a simulation input (the controller's decision, before the
+        model runs). One error — the first broken rule in the contract's order: body is an
+        object → wrapper keys → unknown keys → required keys → fields in DTO order, each checked
+        for `null`, type, finiteness and limits → per item. `field` names the offending key or
+        query parameter; `index` the item, when the error is about one.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [malformed_json, wrong_type, unknown_field, missing_field, null_not_allowed, not_finite, out_of_range, invalid_value]
+          examples:
+            malformed-json:
+              value: {error: request body is not valid JSON, code: malformed_json}
+            wrong-type:
+              value: {error: "list_price must be a number, got a string", code: wrong_type, field: list_price}
+            unknown-field:
+              value: {error: "unknown simulation input field(s): fgts_upfrnt, foo", code: unknown_field, field: fgts_upfrnt}
+            missing-field:
+              value: {error: months_remaining is required, code: missing_field, field: months_remaining}
+            null-not-allowed:
+              value: {error: "itbi_pct must not be null; omit it to use the default", code: null_not_allowed, field: itbi_pct}
+            not-finite:
+              value: {error: list_price must be a finite number, code: not_finite, field: list_price}
+            out-of-range:
+              value: {error: months_remaining must be at most 600, code: out_of_range, field: months_remaining}
+            in-a-candidate:
+              value: {error: "candidates[0].months_remaining is required", code: missing_field, field: "candidates[0].months_remaining", index: 0}
+            ladder-not-increasing:
+              value: {error: "amounts must be strictly increasing: amounts[2] = 30000 is not greater than amounts[1]", code: invalid_value, field: "amounts[2]", index: 2}
+            unknown-query-parameter:
+              value: {error: "unknown query parameter: field (did you mean fields?)", code: unknown_field, field: field}
+            unknown-fields-name:
+              value: {error: "unknown field(s) for mortgage: foo", code: invalid_value, field: fields}
+    NotFound:
+      description: No such route; an unknown or expired simulation id (in the path, in `ids`, in `relative_to`); a `path` that is not an object or array node of the payload.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [not_found]
+          examples:
+            simulation:
+              value: {error: "simulation not found: deadbeef", code: not_found}
+            in-ids:
+              value: {error: "simulation not found: deadbeef", code: not_found, field: ids}
+            node:
+              value: {error: "no such node: mortgage/hidden_incc_debt", code: not_found, field: path}
+    UnprocessableInput:
+      description: |
+        The input — or one candidate's / variation's / rung's merged input, `index` says which —
+        is well-formed but describes an impossible contract: any `SimulationError`. The message is
+        the model's, verbatim and contractual — the text the CLI prints after `error:`. Validation
+        stops at the first broken rule (contract → market → bank credit, then the sizing of the
+        developer plan); the full list is in docs/api-contract.md, "The 422 rules".
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [invalid_input]
+          examples:
+            months:
+              value: {error: months remaining until delivery must be at least 1, code: invalid_input}
+            in-a-candidate:
+              value: {error: months remaining until delivery must be at least 1, code: invalid_input, index: 1}
+            upfront-above-the-price:
+              value: {error: "upfront payments of R$ 513,000.00 exceed the list price of R$ 440,000.00", code: invalid_input, index: 1}
+    MethodNotAllowed:
+      description: The route exists, the method does not. `Allow` is set.
+      headers:
+        Allow:
+          schema:
+            type: string
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [method_not_allowed]
+    PayloadTooLarge:
+      description: The body exceeds 64 KB (the largest legitimate body — 20 candidates — is about 10 KB).
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [payload_too_large]
+    UnsupportedMediaType:
+      description: A `POST` whose `Content-Type` is not `application/json` (a `charset` parameter is fine).
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [unsupported_media_type]
+    InternalError:
+      description: |
+        A bug in the backend — never the answer to a bad request. The body is constant apart
+        from `request_id` (the `X-Request-Id` of the response, to quote when reporting it); the
+        exception never reaches the client. A `500` on a `POST` stores nothing, so the request
+        may simply be retried once the bug is fixed.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/X-Request-Id"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - properties:
+                  code:
+                    enum: [internal_error]
+                required: [request_id]
+          examples:
+            bug:
+              value: {error: internal error, code: internal_error, request_id: 7c1e4b2a-5d3f-4e8a-9b0c-1f2a3b4c5d6e}
+
+  examples:
+    comparison:
+      summary: Two of the reference properties side by side
+      value:
+        href: /api/comparisons?ids=c47d4fcd08f29ff9832e80af20f56eec,c5becd9763ec702a854421a946cc6062
+        rows:
+          - id: c47d4fcd08f29ff9832e80af20f56eec
+            href: /api/simulations/c47d4fcd08f29ff9832e80af20f56eec
+            name: SO
+            list_price: 300000.0
+            months_remaining: 4
+            cash_upfront: 0.0
+            developer_installment: 11750.0
+            nominal_balloon: 0.0
+            incc_on_down_payment: 668.1291144516872
+            hidden_incc_debt: 5474.189224721165
+            balance_at_delivery: 245474.18922472117
+            construction_interest: 4987.204927167989
+            closing_costs: 7500.0
+            sac_first_installment: 2688.0022202199652
+            sac_last_installment: 687.4453297141625
+            price_installment: 2119.277828952937
+            min_income_sac: 8960.007400733219
+            min_income_price: 7064.259429843123
+            credit_gap: 5474.189224721165
+            total_cost: 318629.52326634084
+            extra_pct: 6.209841088780281
+            peak_month: 4
+            peak_total: 14024.136653167157
+          - id: c5becd9763ec702a854421a946cc6062
+            href: /api/simulations/c5becd9763ec702a854421a946cc6062
+            name: F
+            list_price: 396000.0
+            months_remaining: 8
+            cash_upfront: 0.0
+            developer_installment: 8275.0
+            nominal_balloon: 0.0
+            incc_on_down_payment: 1706.781351542173
+            hidden_incc_debt: 14616.676665438164
+            balance_at_delivery: 331416.67666543816
+            construction_interest: 12029.657737198388
+            closing_costs: 9900.0
+            sac_first_installment: 3629.0934110351054
+            sac_last_installment: 928.1254672134545
+            price_installment: 2861.254037422822
+            min_income_sac: 12096.978036783685
+            min_income_price: 9537.513458076073
+            credit_gap: 14616.676665438164
+            total_cost: 434253.1157541787
+            extra_pct: 9.659877715701699
+            peak_month: 0
+            peak_total: 13000.0
+
+  schemas:
+    # >>> generated from proto/sincero/simulation_input.proto by gen_openapi.py — do not edit this block
+    InputFields:
+      type: object
+      description: "Any subset of the input fields of a simulation — a `base`, a candidate, a variation, the `overrides` of a what-if row. Field names are the model's; the grouping into `contract` / `market` / `bank_credit` (`x-group`) is not visible on the wire. Types are strict JSON types: a number field takes only a JSON number, an integer field a JSON number without fractional part (`19.0` is fine, `19.5` is not). `null` is accepted only where the type says so and means \"absent\". Generated from `proto/sincero/simulation_input.proto`."
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          description: "Label of the property. Required by the model; the CLI and the API label an unnamed simulation \"CUSTOM\" (docs/api-contract.md, open question \"Where `name`'s default lives\")."
+          default: CUSTOM
+          x-group: contract
+        list_price:
+          type: number
+          description: "List price, R$."
+          maximum: 1000000000000
+          x-group: contract
+          x-unit: "R$"
+        months_remaining:
+          type: integer
+          description: "Months left until the building is delivered (time left, not the project's total duration)."
+          maximum: 600
+          x-group: contract
+          x-unit: months
+        down_payment_pct:
+          type: number
+          description: "Down payment required by the developer, % of the list price."
+          default: 20.0
+          maximum: 1000
+          x-group: contract
+          x-unit: "% of list price"
+        fgts_upfront:
+          type: number
+          description: "FGTS used at signing, R$."
+          default: 0.0
+          maximum: 1000000000000
+          x-group: contract
+          x-unit: "R$"
+        cash_upfront:
+          type: number
+          description: "Cash paid at signing, R$; above the down payment it reduces the financed balance."
+          default: 0.0
+          maximum: 1000000000000
+          x-group: contract
+          x-unit: "R$"
+        developer_installment:
+          type: [number, "null"]
+          description: "Monthly amount paid to the developer during construction, R$. When null the remaining down payment is split in equal installments; when the buyer chooses an amount, whatever it does not cover is paid as balloons in `balloon_months` (the balloon amount is derived, never typed in)."
+          default: null
+          maximum: 1000000000000
+          x-group: contract
+          x-unit: "R$ per month"
+        balloon_months:
+          type: array
+          items:
+            type: integer
+          maxItems: 60
+          description: "Construction months (1..months_remaining) with a balloon payment."
+          default: []
+          x-group: contract
+          x-unit: months
+        incc_rate_pa:
+          type: number
+          description: "INCC, % per year."
+          default: 7.0
+          maximum: 1000
+          x-group: market
+          x-unit: "% per year"
+        bank_rate_pa:
+          type: number
+          description: "Bank interest rate, % per year."
+          default: 10.26
+          maximum: 1000
+          x-group: market
+          x-unit: "% per year"
+        term_months:
+          type: integer
+          description: "Bank financing term, months."
+          default: 360
+          maximum: 600
+          x-group: market
+          x-unit: months
+        itbi_pct:
+          type: number
+          description: "ITBI, % of the list price."
+          default: 2.0
+          maximum: 1000
+          x-group: market
+          x-unit: "% of list price"
+        registry_pct:
+          type: number
+          description: "Registry and deed costs, % of the list price."
+          default: 0.5
+          maximum: 1000
+          x-group: market
+          x-unit: "% of list price"
+        income_commitment_ratio:
+          type: number
+          description: "Max share of household income the bank accepts as installment, 0-1."
+          default: 0.3
+          x-group: market
+          x-unit: "ratio 0-1"
+        pre_approved_credit:
+          type: [number, "null"]
+          description: "Credit pre-approved by the bank at signing, R$. When null: the nominal mortgage balance."
+          default: null
+          maximum: 1000000000000
+          x-group: bank_credit
+          x-unit: "R$"
+        pro_soluto_months:
+          type: integer
+          description: "Months to pay the developer any credit gap (pro-soluto)."
+          default: 12
+          maximum: 600
+          x-group: bank_credit
+          x-unit: months
+    SimulationInput:
+      description: "The body of `POST /api/simulations`: the input fields with the required ones present. Omitted fields take their `default`."
+      allOf:
+        - $ref: "#/components/schemas/InputFields"
+      required: [list_price, months_remaining]
+    # <<< end of the generated block
+
+    ComparisonRequest:
+      type: object
+      description: "`POST /api/comparisons`: each candidate is `{**base, **candidate}` and must satisfy every rule of `SimulationInput` after the merge. Mirrors `sincero.ComparisonRequest` in the .proto."
+      additionalProperties: false
+      required: [candidates]
+      properties:
+        base:
+          description: Input fields shared by every candidate. Optional (default `{}`); `null` is not allowed.
+          $ref: "#/components/schemas/InputFields"
+        candidates:
+          type: array
+          description: Per-candidate input fields, 1 to 20.
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/InputFields"
+    WhatIfRequest:
+      type: object
+      description: "`POST /api/simulations/{id}/what-if`: overrides applied to the stored base. Mirrors `sincero.WhatIfRequest` in the .proto."
+      additionalProperties: false
+      required: [variations]
+      properties:
+        variations:
+          type: array
+          description: Sets of input-field overrides, 1 to 20, none empty.
+          minItems: 1
+          maxItems: 20
+          items:
+            allOf:
+              - $ref: "#/components/schemas/InputFields"
+              - minProperties: 1
+    CashLadderRequest:
+      type: object
+      description: "`POST /api/simulations/{id}/cash-ladder`: cash at signing for each rung, absolute, in R$ — finite, non-negative, strictly increasing. Mirrors `sincero.CashLadderRequest` in the .proto."
+      additionalProperties: false
+      required: [amounts]
+      properties:
+        amounts:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: number
+            minimum: 0
+            maximum: 1000000000000
+
+    Created:
+      type: object
+      description: The answer to `POST /api/simulations` — no figures; the id is opaque.
+      additionalProperties: false
+      required: [id, href]
+      properties:
+        id:
+          type: string
+          pattern: "^[0-9a-f]{32}$"
+        href:
+          type: string
+          description: "`/api/simulations/{id}`"
+    FieldSpec:
+      type: object
+      description: One input field as `GET /api/fields` lists it.
+      additionalProperties: false
+      required: [name, group, type, required, default, unit]
+      properties:
+        name:
+          type: string
+        group:
+          type: string
+          enum: [contract, market, bank_credit]
+        type:
+          type: string
+          enum: [string, number, integer, "number|null", "integer[]"]
+        required:
+          type: boolean
+        default:
+          description: The value an omitted field takes; `null` for a required field and for the nullable ones.
+          type: [string, number, integer, array, "null"]
+        unit:
+          type: [string, "null"]
+    Error:
+      type: object
+      description: The body of every non-2xx response. Nothing else is ever in it — no stack, no exception class, no internal path.
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: One human-readable sentence. For `422` it is the model's message, verbatim and contractual; for every other status it is for the developer and its wording is not contractual.
+        code:
+          type: string
+          description: A stable `snake_case` identifier of the cause — the thing a client branches on within a status. New codes may be added; existing ones are never renamed.
+          enum: [malformed_json, wrong_type, unknown_field, missing_field, null_not_allowed, not_finite, out_of_range, invalid_value, not_found, method_not_allowed, payload_too_large, unsupported_media_type, invalid_input, internal_error]
+        field:
+          type: string
+          description: "When the error is about one key or parameter: its path from the body root (`list_price`, `balloon_months[1]`, `base.fgts`, `candidates[1].months_remaining`, `amounts[2]`) or, for a `GET`, the query parameter name (`ids`, `fields`, `relative_to`); `body` when the body itself is wrong; `path` for a bad node path."
+        index:
+          type: integer
+          minimum: 0
+          description: When the error is about one item of `candidates`, `variations` or `amounts` — its zero-based position.
+        request_id:
+          type: string
+          description: "On `500` only: the `X-Request-Id` of the response."
+
+    SimulationResource:
+      type: object
+      description: "`GET /api/simulations/{id}`: what was simulated, the headline figures, and what else can be fetched."
+      additionalProperties: false
+      required: [id, href, created_at, expires_at, input, summary, sections]
+      properties:
+        id:
+          type: string
+          pattern: "^[0-9a-f]{32}$"
+        href:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          description: RFC 3339, UTC.
+        expires_at:
+          type: string
+          format: date-time
+          description: RFC 3339, UTC; moves forward on every access.
+        input:
+          description: The resolved input — every field present, defaults filled in; `developer_installment` / `pre_approved_credit` stay `null` when omitted; `balloon_months` echoed as received.
+          $ref: "#/components/schemas/ResolvedInput"
+        summary:
+          $ref: "#/components/schemas/Summary"
+        sections:
+          type: object
+          description: One entry per top-level payload node plus `result`; `fields` is null for `result`.
+          additionalProperties:
+            $ref: "#/components/schemas/Section"
+    Section:
+      type: object
+      additionalProperties: false
+      required: [href, fields]
+      properties:
+        href:
+          type: string
+        fields:
+          description: "key → kind, where kind is `number` | `string` | `null` | `object` | `array[n]` (n = number of rows), computed from the actual payload."
+          type: [object, "null"]
+          additionalProperties:
+            type: string
+            pattern: "^(number|string|null|object|array\\[[0-9]+\\])$"
+    ResolvedInput:
+      description: "`InputFields` with every field present — the `input` of a resource and of the payload."
+      allOf:
+        - $ref: "#/components/schemas/InputFields"
+      required: [name, list_price, months_remaining, down_payment_pct, fgts_upfront, cash_upfront, developer_installment, balloon_months, incc_rate_pa, bank_rate_pa, term_months, itbi_pct, registry_pct, income_commitment_ratio, pre_approved_credit, pro_soluto_months]
+
+    SummaryColumns:
+      type: object
+      description: The columns of `summary_to_dict`. Money in R$, not rounded; `extra_pct` is a percentage.
+      properties:
+        name: {type: string}
+        list_price: {type: number}
+        months_remaining: {type: integer}
+        cash_upfront: {type: number}
+        developer_installment: {type: number, description: "`down_payment.nominal_installment` — resolved, never null"}
+        nominal_balloon: {type: number}
+        incc_on_down_payment: {type: number, description: "`down_payment.incc_correction`"}
+        hidden_incc_debt: {type: number}
+        balance_at_delivery: {type: number, description: "`mortgage.corrected_balance`"}
+        construction_interest: {type: number}
+        closing_costs: {type: number}
+        sac_first_installment: {type: number}
+        sac_last_installment: {type: number}
+        price_installment: {type: number}
+        min_income_sac: {type: number}
+        min_income_price: {type: number}
+        credit_gap: {type: number}
+        total_cost: {type: number}
+        extra_pct: {type: number}
+        peak_month: {type: integer}
+        peak_total: {type: number}
+    Summary:
+      description: "`summary_to_dict`, whole: the flat, table-friendly figures of one simulation — the `summary` of a resource."
+      allOf:
+        - $ref: "#/components/schemas/SummaryColumns"
+      required: [name, list_price, months_remaining, cash_upfront, developer_installment, nominal_balloon, incc_on_down_payment, hidden_incc_debt, balance_at_delivery, construction_interest, closing_costs, sac_first_installment, sac_last_installment, price_installment, min_income_sac, min_income_price, credit_gap, total_cost, extra_pct, peak_month, peak_total]
+      unevaluatedProperties: false
+    ComparisonRow:
+      description: "One row of a comparison: the summary columns plus `id` and `href` linking the row to its simulation; with a reference, `overrides` and `delta` as the last two columns. Every column is present unless `fields` selected a subset, so none is required here."
+      allOf:
+        - $ref: "#/components/schemas/SummaryColumns"
+        - type: object
+          properties:
+            id:
+              type: string
+              pattern: "^[0-9a-f]{32}$"
+            href:
+              type: string
+            overrides:
+              description: The input fields in which this row's resolved input differs from the reference's, with this row's values; `{}` when identical.
+              $ref: "#/components/schemas/InputFields"
+            delta:
+              type: object
+              description: "`row[column] − relative_to[column]` for every numeric summary column, in the summary's order."
+              additionalProperties:
+                type: number
+      unevaluatedProperties: false
+    Comparison:
+      type: object
+      description: Summary rows side by side, in the order of `ids`; with `relative_to`, a what-if.
+      additionalProperties: false
+      required: [href, rows]
+      properties:
+        href:
+          type: string
+          description: "`/api/comparisons?ids=…[&relative_to=…]` — always the full `ids`, never `fields`."
+        relative_to:
+          description: The reference simulation as a row (without `overrides` / `delta`); present only on a what-if.
+          $ref: "#/components/schemas/ComparisonRow"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComparisonRow"
+
+    SimulationPayload:
+      type: object
+      description: "`simulation_to_dict`: the whole result, `GET …/result` and `python cli.py … --json`. Every number is finite; money is in R$, not rounded; rates are fractions per month."
+      additionalProperties: false
+      required: [input, rates, down_payment, mortgage, construction_interest, closing_costs, financing, credit_gap, total_cost, timeline]
+      properties:
+        input:
+          $ref: "#/components/schemas/ResolvedInput"
+        rates:
+          $ref: "#/components/schemas/Rates"
+        down_payment:
+          $ref: "#/components/schemas/DownPayment"
+        mortgage:
+          $ref: "#/components/schemas/Mortgage"
+        construction_interest:
+          $ref: "#/components/schemas/ConstructionInterest"
+        closing_costs:
+          $ref: "#/components/schemas/ClosingCosts"
+        financing:
+          $ref: "#/components/schemas/Financing"
+        credit_gap:
+          $ref: "#/components/schemas/CreditGap"
+        total_cost:
+          $ref: "#/components/schemas/TotalCost"
+        timeline:
+          $ref: "#/components/schemas/Timeline"
+    Rates:
+      type: object
+      description: Annual percentages of the input turned into monthly fractions by compounding, `(1 + r/100)^(1/12) − 1`.
+      additionalProperties: false
+      required: [incc_pm, bank_pm]
+      properties:
+        incc_pm: {type: number}
+        bank_pm: {type: number}
+    DownPayment:
+      type: object
+      description: What goes to the developer during construction.
+      additionalProperties: false
+      required: [required, upfront, remaining, nominal_installment, missing_amount, nominal_balloon, balloons, total_paid, incc_correction, schedule]
+      properties:
+        required: {type: number, description: "`list_price × down_payment_pct / 100`"}
+        upfront: {type: number, description: "`fgts_upfront + cash_upfront`"}
+        remaining: {type: number, description: "`max(0, required − upfront)`"}
+        nominal_installment: {type: number, description: "monthly installment before INCC: the one given, or `remaining / N`"}
+        missing_amount: {type: number, description: "`remaining − nominal_installment × N`, the part paid as balloons (nominal); 0 without balloons"}
+        nominal_balloon: {type: number, description: "one balloon before INCC; 0 without balloons"}
+        balloons:
+          type: array
+          description: The derived balloons, sorted by month; empty whenever `developer_installment` is null.
+          items:
+            $ref: "#/components/schemas/Balloon"
+        total_paid: {type: number, description: sum of every INCC-corrected payment in `schedule`}
+        incc_correction: {type: number, description: "`total_paid − remaining`"}
+        schedule:
+          type: array
+          description: One row per construction month `1..N`.
+          items:
+            $ref: "#/components/schemas/DownPaymentRow"
+    Balloon:
+      type: object
+      additionalProperties: false
+      required: [month, nominal]
+      properties:
+        month: {type: integer}
+        nominal: {type: number}
+    DownPaymentRow:
+      type: object
+      additionalProperties: false
+      required: [month, incc_factor, installment, balloon]
+      properties:
+        month: {type: integer}
+        incc_factor: {type: number, description: "`(1 + incc_pm)^month`"}
+        installment: {type: number, description: INCC-corrected}
+        balloon: {type: number, description: INCC-corrected; 0 in a month without a balloon}
+    Mortgage:
+      type: object
+      description: The balance handed to the bank.
+      additionalProperties: false
+      required: [nominal_balance, corrected_balance, hidden_incc_debt]
+      properties:
+        nominal_balance: {type: number, description: "`list_price − max(required, upfront)`"}
+        corrected_balance: {type: number, description: "`nominal_balance × (1 + incc_pm)^N` — what the bank must finance at delivery"}
+        hidden_incc_debt: {type: number, description: "`corrected_balance − nominal_balance`"}
+    ConstructionInterest:
+      type: object
+      additionalProperties: false
+      required: [total, schedule]
+      properties:
+        total: {type: number}
+        schedule:
+          type: array
+          description: One row per construction month `1..N`.
+          items:
+            $ref: "#/components/schemas/ConstructionInterestRow"
+    ConstructionInterestRow:
+      type: object
+      additionalProperties: false
+      required: [month, released_share, released_balance, interest]
+      properties:
+        month: {type: integer}
+        released_share: {type: number, description: "`k/N`"}
+        released_balance: {type: number, description: corrected balance × share}
+        interest: {type: number, description: "released balance × `bank_pm`"}
+    ClosingCosts:
+      type: object
+      additionalProperties: false
+      required: [itbi, registry, total]
+      properties:
+        itbi: {type: number}
+        registry: {type: number}
+        total: {type: number}
+    Financing:
+      type: object
+      description: SAC and PRICE side by side. Inside the schedules `month` counts from the start of financing (bank month 1 = timeline month N+1).
+      additionalProperties: false
+      required: [sac, price]
+      properties:
+        sac:
+          $ref: "#/components/schemas/SacSchedule"
+        price:
+          $ref: "#/components/schemas/PriceSchedule"
+    AmortizationSummary:
+      type: object
+      required: [first_installment, last_installment, total_interest, total_paid, min_income, schedule]
+      properties:
+        first_installment: {type: number}
+        last_installment: {type: number}
+        total_interest: {type: number}
+        total_paid: {type: number}
+        min_income: {type: number, description: "`first_installment / income_commitment_ratio`"}
+        schedule:
+          type: array
+          description: One row per bank month `1..term_months`.
+          items:
+            $ref: "#/components/schemas/AmortizationRow"
+    SacSchedule:
+      allOf:
+        - $ref: "#/components/schemas/AmortizationSummary"
+        - type: object
+          properties:
+            amortization: {type: number, description: the constant amortization}
+      required: [amortization]
+      unevaluatedProperties: false
+    PriceSchedule:
+      allOf:
+        - $ref: "#/components/schemas/AmortizationSummary"
+        - type: object
+          properties:
+            installment: {type: number, description: the constant installment}
+      required: [installment]
+      unevaluatedProperties: false
+    AmortizationRow:
+      type: object
+      additionalProperties: false
+      required: [month, installment, interest, amortization, outstanding]
+      properties:
+        month: {type: integer}
+        installment: {type: number}
+        interest: {type: number}
+        amortization: {type: number}
+        outstanding: {type: number, description: balance after that payment}
+    CreditGap:
+      type: object
+      description: The "Caixa trigger".
+      additionalProperties: false
+      required: [pre_approved, needed, gap, pro_soluto_months, pro_soluto_installment]
+      properties:
+        pre_approved: {type: number, description: "`pre_approved_credit`, or `mortgage.nominal_balance` when it was null"}
+        needed: {type: number, description: "`mortgage.corrected_balance`"}
+        gap: {type: number, description: "`max(0, needed − pre_approved)`"}
+        pro_soluto_months: {type: integer}
+        pro_soluto_installment: {type: number, description: "`gap / pro_soluto_months`, no interest"}
+    TotalCost:
+      type: object
+      additionalProperties: false
+      required: [list_price, additional, total, extra_pct, breakdown]
+      properties:
+        list_price: {type: number}
+        additional: {type: number, description: everything paid on top of the list price until delivery}
+        total: {type: number}
+        extra_pct: {type: number, description: "`additional / list_price × 100`"}
+        breakdown:
+          type: array
+          description: Four components and a closing `Total` row, in this order; `base_value` adds up to the list price.
+          minItems: 5
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/BreakdownLine"
+    BreakdownLine:
+      type: object
+      additionalProperties: false
+      required: [component, base_value, additional, final_value]
+      properties:
+        component:
+          type: string
+          enum: [Down payment, Mortgage balance, Construction interest, Closing costs, Total]
+          description: Stable identifiers, not translated labels.
+        base_value: {type: number}
+        additional: {type: number}
+        final_value: {type: number, description: "`base_value + additional`"}
+    Timeline:
+      type: object
+      description: Month-by-month cash out.
+      additionalProperties: false
+      required: [months, peak_month, peak_total, construction_phase_total]
+      properties:
+        months:
+          type: array
+          description: One row per month `0..N+term_months`.
+          items:
+            $ref: "#/components/schemas/TimelineRow"
+        peak_month: {type: integer, description: "the construction-phase month (`0..N`) with the highest `total`"}
+        peak_total: {type: number}
+        construction_phase_total: {type: number, description: "sum of `total` over months `0..N`"}
+    TimelineRow:
+      type: object
+      additionalProperties: false
+      required: [month, developer_installment, balloon, construction_interest, bank_installment, upfront, total]
+      properties:
+        month: {type: integer, description: "0 = signing, 1..N construction, N+1.. bank installments"}
+        developer_installment: {type: number}
+        balloon: {type: number}
+        construction_interest: {type: number}
+        bank_installment: {type: number, description: the SAC installment}
+        upfront: {type: number, description: non-zero only in month 0}
+        total: {type: number, description: the sum of the other five}

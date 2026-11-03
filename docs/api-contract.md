@@ -82,7 +82,8 @@ Everything is `application/json`. No authentication. Any other method on these p
 
 ## `GET /api/fields`
 
-The input fields a simulation accepts, read from the model DTOs (`input_dto.py`), so the
+The input fields a simulation accepts, read from the model DTOs (`input_dto.py`, themselves
+generated from `backend/proto/sincero/simulation_input.proto`), so the
 front-end form and the CLI `--help` describe the same defaults from the same source.
 
 ```json
@@ -128,7 +129,9 @@ DTOs is a model concern and is not visible on the wire.
 | `pro_soluto_months` | integer | months | no | `12` | `--pro-soluto-months` |
 
 Defaults are **not** repeated in the controller: they come from `field_defaults()`, as they do for
-the CLI's `--help`. This table is documentation; the DTOs are the source of truth.
+the CLI's `--help`. This table is documentation; the source of truth is
+`backend/proto/sincero/simulation_input.proto`, from which the DTOs are generated
+([decision](decisions/input-fields-from-proto.md)).
 
 ### Shape rules (checked by the controller → `400`)
 

@@ -1,0 +1,25 @@
+$ curl -s -X POST localhost:8765/sincero.Simulations/CreateSimulation -H 'Content-Type: application/json' -d '{"list_price":440000,"months_remaining":0}'
+{"code": "invalid_argument", "message": "months remaining until delivery must be at least 1"}  [400]
+$ ... -d '{"list_price":"440000","months_remaining":19,"foo":1}'
+{"code": "invalid_argument", "message": "unmarshal message: cannot decode sincero.SimulationInput from JSON: key: 'foo' is unknown"}  [400]
+$ ... -d '{"list_price":"440000","months_remaining":19}'   (a string for a number: the proto3 JSON mapping accepts it)
+{"id":"379474242211157138c2e492e87c3f0f"}  [200]
+$ curl 'localhost:8765/sincero.Simulations/GetNode?connect=v1&encoding=json&message={"id":"56c8…","path":"mortgage"}'   (an idempotent RPC as an HTTP GET)
+{"json":"eyJub21pbmFsX2JhbGFuY2UiOiAzNTIwMDAuMCwgImNvcnJlY3RlZF9iYWxhbmNlIjogMzkxODAyLjI5NzMyNzgxMDEsICJoaWRkZW5faW5jY19kZWJ0IjogMzk4MDIuMjk3MzI3ODEwMDh9"}  [200]
+
+$ npm start   (client/client.ts)
+# connect+json
+  created 56c80b2d83723ef0e1252915c0e9730a; summary.total_cost = 525982.0676069926; input echoed: RA, 6,12
+  GET mortgage?fields=hidden_incc_debt -> {"hidden_incc_debt": 39802.29732781008}
+  months_remaining 0 -> InvalidArgument: months remaining until delivery must be at least 1
+  unknown id -> NotFound
+# connect+proto
+  created 56c80b2d83723ef0e1252915c0e9730a; summary.total_cost = 525982.0676069926; input echoed: RA, 6,12
+  GET mortgage?fields=hidden_incc_debt -> {"hidden_incc_debt": 39802.29732781008}
+  months_remaining 0 -> InvalidArgument: months remaining until delivery must be at least 1
+  unknown id -> NotFound
+# grpc-web
+  created 56c80b2d83723ef0e1252915c0e9730a; summary.total_cost = 525982.0676069926; input echoed: RA, 6,12
+  GET mortgage?fields=hidden_incc_debt -> {"hidden_incc_debt": 39802.29732781008}
+  months_remaining 0 -> InvalidArgument: months remaining until delivery must be at least 1
+  unknown id -> NotFound

@@ -47,7 +47,8 @@ interest and bank installments all R$ 0, only the closing costs remain).
 
 ```
 app/models/
-├── input_dto.py         ContractData, MarketData, BankCreditData  — frozen DTOs, the defaults
+├── input_fields.py      ContractFields, MarketFields, BankCreditFields — GENERATED from proto/sincero/simulation_input.proto (make dto)
+├── input_dto.py         ContractData, MarketData, BankCreditData  — frozen DTOs: the generated fields + derived amounts
 ├── input_interface.py   SimulationInputInterface                  — pure ABC: validate(), with_overrides()
 ├── validators.py        Validator[T] ABC, 7 validators, CompositeValidator, ValidationPolicy
 └── inputs.py            SimulationInput                           — @dataclass(frozen=True) of the three DTOs
