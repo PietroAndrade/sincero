@@ -23,8 +23,8 @@ tests drive it with dicts.
     cash_ladder_inputs(body, base)      POST /api/simulations/{id}/cash-ladder (amounts)
     simulate_one(input) / simulate_all(inputs)                              the 422 pass
 
-Field names, types and defaults are read from the model DTOs (`input_dto.py`), never
-re-declared; only the API limits — protective ceilings the model does not have — live here.
+Field names, types and defaults are read from the model DTOs (`input_dto.py`, generated from
+`proto/sincero/simulation_input.proto`), never re-declared; only the API limits — protective ceilings the model does not have — live here.
 """
 from __future__ import annotations
 

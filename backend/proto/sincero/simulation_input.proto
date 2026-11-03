@@ -1,0 +1,134 @@
+// SINCERO — the inputs of a simulation, as the API receives them.
+//
+// This file is the source of truth for the input fields: their names, types, defaults,
+// which of them may be null, and which DTO owns each one. `tools/gen_dto.py` generates
+// `app/models/input_fields.py` from it — one frozen dataclass per `Group` — and the
+// hand-written DTOs in `app/models/input_dto.py` (`ContractData`, `MarketData`,
+// `BankCreditData`) only add the amounts derived from their own fields.
+//
+//     make dto          regenerate app/models/input_fields.py (needs grpcio-tools)
+//     make test         fails while the generated file and this .proto disagree
+//
+// Conventions, enforced by the generator:
+//
+//   * `SimulationInput` is one FLAT message: the body of `POST /api/simulations` is one flat
+//     object (docs/api-contract.md), and the split into three DTOs is a model concern. The
+//     owner of a field is the `group` of its `(sincero.field)` option, never nesting.
+//   * A plain scalar is REQUIRED (it has no default; the dataclass field has none either).
+//   * An `optional` scalar may be omitted on the wire. It must say what omission means:
+//     a `default_*` (proto3 has no custom defaults, so the option carries it) or
+//     `nullable: true` — `null` is a value, "let the model size it" (`Optional[...] = None`).
+//   * A `repeated` field defaults to empty and becomes a tuple.
+//   * Within a group, required fields come before optional ones (a dataclass rule).
+//   * Field names are unique across groups: a flat `field -> value` mapping (a JSON body,
+//     argparse flags, a what-if override) is routed to its DTO by name (`FIELD_OWNER`).
+//
+// Units and help text stay in the controllers for now (`cli_controller.HELP`,
+// `api_requests.UNITS`) — docs/api-contract.md, open question "Field help text".
+syntax = "proto3";
+
+package sincero;
+
+import "google/protobuf/descriptor.proto";
+
+// ----- the vocabulary of this file ---------------------------------------------------
+
+// The DTO that owns a field. One frozen dataclass `<Group>Fields` is generated per group,
+// in this order; the comment of each value is the docstring of its dataclass.
+enum Group {
+  GROUP_UNSPECIFIED = 0;
+  // The contract with the developer: the property, the down payment and how it is paid.
+  CONTRACT = 1;
+  // Market and regulatory conditions, independent of the property.
+  MARKET = 2;
+  // The bank's position at signing and the fallback when it falls short at delivery.
+  BANK_CREDIT = 3;
+}
+
+// What the generator needs to know about one input field beyond its type.
+message FieldMeta {
+  Group group = 1;
+  // Value of an omitted `optional` field. Must match the field's type.
+  oneof default {
+    double default_number = 2;
+    int32 default_integer = 3;
+    string default_string = 4;
+  }
+  // `null` is accepted and means "absent": the model derives the value.
+  bool nullable = 5;
+}
+
+extend google.protobuf.FieldOptions {
+  FieldMeta field = 50001;
+}
+
+// ----- the inputs ------------------------------------------------------------------------
+
+// Everything a simulation needs. The body of `POST /api/simulations`; the items of
+// `candidates` and `variations`; the `input` node of a simulation resource.
+message SimulationInput {
+  // --- contract: what the buyer signs with the developer ---
+
+  // Label of the property. Required by the model; the CLI and the API label an unnamed
+  // simulation "CUSTOM" (docs/api-contract.md, open question "Where `name`'s default lives").
+  string name = 1 [(sincero.field) = {group: CONTRACT}];
+  // List price, R$.
+  double list_price = 2 [(sincero.field) = {group: CONTRACT}];
+  // Months left until the building is delivered (time left, not the project's total duration).
+  int32 months_remaining = 3 [(sincero.field) = {group: CONTRACT}];
+  // Down payment required by the developer, % of the list price.
+  optional double down_payment_pct = 4 [(sincero.field) = {group: CONTRACT default_number: 20.0}];
+  // FGTS used at signing, R$.
+  optional double fgts_upfront = 5 [(sincero.field) = {group: CONTRACT default_number: 0.0}];
+  // Cash paid at signing, R$; above the down payment it reduces the financed balance.
+  optional double cash_upfront = 6 [(sincero.field) = {group: CONTRACT default_number: 0.0}];
+  // Monthly amount paid to the developer during construction, R$. When null the remaining
+  // down payment is split in equal installments; when the buyer chooses an amount, whatever
+  // it does not cover is paid as balloons in `balloon_months` (the balloon amount is derived,
+  // never typed in).
+  optional double developer_installment = 7 [(sincero.field) = {group: CONTRACT nullable: true}];
+  // Construction months (1..months_remaining) with a balloon payment.
+  repeated int32 balloon_months = 8 [(sincero.field) = {group: CONTRACT}];
+
+  // --- market: the economic environment ---
+
+  // INCC, % per year.
+  optional double incc_rate_pa = 9 [(sincero.field) = {group: MARKET default_number: 7.0}];
+  // Bank interest rate, % per year.
+  optional double bank_rate_pa = 10 [(sincero.field) = {group: MARKET default_number: 10.26}];
+  // Bank financing term, months.
+  optional int32 term_months = 11 [(sincero.field) = {group: MARKET default_integer: 360}];
+  // ITBI, % of the list price.
+  optional double itbi_pct = 12 [(sincero.field) = {group: MARKET default_number: 2.0}];
+  // Registry and deed costs, % of the list price.
+  optional double registry_pct = 13 [(sincero.field) = {group: MARKET default_number: 0.5}];
+  // Max share of household income the bank accepts as installment, 0-1.
+  optional double income_commitment_ratio = 14 [(sincero.field) = {group: MARKET default_number: 0.30}];
+
+  // --- bank credit: the bank's position at signing ---
+
+  // Credit pre-approved by the bank at signing, R$. When null: the nominal mortgage balance.
+  optional double pre_approved_credit = 15 [(sincero.field) = {group: BANK_CREDIT nullable: true}];
+  // Months to pay the developer any credit gap (pro-soluto).
+  optional int32 pro_soluto_months = 16 [(sincero.field) = {group: BANK_CREDIT default_integer: 12}];
+}
+
+// ----- the other request bodies (docs/api-contract.md) -------------------------------------
+// Not part of DTO generation; declared so the four POST bodies share one schema. Limits
+// (1..20 items, the API ceilings) and the rules a schema cannot state live in the contract.
+
+// `POST /api/comparisons`: each candidate is `{**base, **candidate}`.
+message ComparisonRequest {
+  optional SimulationInput base = 1;
+  repeated SimulationInput candidates = 2;
+}
+
+// `POST /api/simulations/{id}/what-if`: each variation overrides the stored base.
+message WhatIfRequest {
+  repeated SimulationInput variations = 1;
+}
+
+// `POST /api/simulations/{id}/cash-ladder`: strictly increasing amounts of cash at signing.
+message CashLadderRequest {
+  repeated double amounts = 1;
+}

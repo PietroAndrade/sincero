@@ -2,7 +2,7 @@ PY ?= python3
 BEHAVE = $(PY) -m behave
 BEHAVE_ALLURE = -f pretty -o - -f allure -o allure-results
 
-.PHONY: features feature tags unit test report cli
+.PHONY: features feature tags unit test report cli dto
 
 features:            ## run every BDD scenario
 	$(BEHAVE)
@@ -26,3 +26,6 @@ report:              ## behave + Allure 3 report (needs: npm install -g allure)
 
 cli:                 ## reference properties report
 	$(PY) cli.py
+
+dto:                 ## regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto (needs grpcio-tools)
+	$(PY) tools/gen_dto.py
