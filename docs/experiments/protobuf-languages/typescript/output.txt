@@ -1,0 +1,122 @@
+=== the .proto, read through the custom option ===
+  name                     contract     required
+  list_price               contract     required
+  months_remaining         contract     required
+  down_payment_pct         contract     default 20
+  fgts_upfront             contract     default 0
+  cash_upfront             contract     default 0
+  developer_installment    contract     nullable
+  balloon_months           contract     default []
+  incc_rate_pa             market       default 7
+  bank_rate_pa             market       default 10.26
+  term_months              market       default 360
+  itbi_pct                 market       default 2
+  registry_pct             market       default 0.5
+  income_commitment_ratio  market       default 0.3
+  pre_approved_credit      bank_credit  nullable
+  pro_soluto_months        bank_credit  default 12
+
+=== POST /api/simulations — proto3 JSON mapping (protobuf-es) vs the contract ===
+
+# body is an array
+  contract : 400 wrong_type body
+  protobuf : cannot decode message sincero.SimulationInput from JSON: Array(2)
+
+# string for a number
+  contract : 400 wrong_type list_price
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# boolean for a number
+  contract : 400 wrong_type list_price
+  protobuf : cannot decode field sincero.SimulationInput.list_price from JSON: expected number (float64), got true
+
+# 19.0 for an integer
+  contract : accepted (19)
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# 19.5 for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : cannot decode field sincero.SimulationInput.months_remaining from JSON: expected number (int32), got 19.5
+
+# "19" for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# true for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : cannot decode field sincero.SimulationInput.months_remaining from JSON: expected number (int32), got true
+
+# two unknown fields
+  contract : 400 unknown_field fgts_upfrnt
+  protobuf : cannot decode message sincero.SimulationInput from JSON: key "fgts_upfrnt" is unknown
+
+# camelCase alias
+  contract : 400 unknown_field listPrice
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# missing months_remaining
+  contract : 400 missing_field months_remaining
+  protobuf : months_remaining is required
+
+# null on itbi_pct
+  contract : 400 null_not_allowed itbi_pct
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# null on developer_installment
+  contract : accepted (absent)
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# "NaN" (string)
+  contract : 400 wrong_type list_price
+  protobuf : accepted -> {"name":"CUSTOM","list_price":"NaN","months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# months_remaining 5000
+  contract : 400 out_of_range months_remaining
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":5000,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# months_remaining 2**31
+  contract : 400 out_of_range months_remaining
+  protobuf : cannot decode field sincero.SimulationInput.months_remaining from JSON: expected number (int32): 2147483648 out of range
+
+# balloon item 6.5
+  contract : 400 wrong_type balloon_months[1]
+  protobuf : cannot decode field sincero.SimulationInput.balloon_months from JSON: list item #2: expected number (int32), got 6.5
+
+# balloon item "12"
+  contract : 400 wrong_type balloon_months[1]
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"balloon_months":[6,12],"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# balloon item null
+  contract : 400 null_not_allowed balloon_months[1]
+  protobuf : cannot decode field sincero.SimulationInput.balloon_months from JSON: list item must not be null
+
+# omitted defaults
+  contract : accepted; down_payment_pct resolves to 20.0
+  protobuf : accepted -> {"name":"CUSTOM","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":0,"cash_upfront":0,"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+# the RA example
+  contract : accepted
+  protobuf : accepted -> {"name":"RA","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":13000,"cash_upfront":0,"developer_installment":2500,"balloon_months":[6,12],"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3,"pro_soluto_months":12}
+
+=== nested: POST /api/comparisons ===
+  candidate[1].months_remaining as a string: 19 (accepted, coerced)
+
+=== the RA input as the three DTOs ===
+  {"contract":{"name":"RA","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":13000,"cash_upfront":0,"developer_installment":2500,"balloon_months":[6,12]},"market":{"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3},"bank_credit":{"pro_soluto_months":12}}
+  required down payment: 88000 remaining: 75000
+
+=== timing: fromJson + resolve, the RA body, mean of 20000: 2.7 us
+# RA
+  valid
+# list price 0, months 0
+  list_price: must be greater than 0
+  months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# months 5000
+  months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# down payment 150 %
+  down_payment_pct: must be greater than or equal to 0 and less than or equal to 100
+# repeated balloon, balloon 0
+  balloon_months: repeated value must contain unique items
+  balloon_months.[2]: must be greater than or equal to 1
+# upfront above the price (CEL)
+  (message): upfront payments exceed the list price

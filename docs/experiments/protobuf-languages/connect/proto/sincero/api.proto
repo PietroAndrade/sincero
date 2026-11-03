@@ -1,0 +1,28 @@
+syntax = "proto3";
+package sincero;
+import "sincero/simulation_input.proto";
+
+// Draft of the API as a Connect/gRPC service — enough of it to prove the round trip
+// (decision record: docs/decisions/api-protocol-and-language.md). Not the final service.
+service Simulations {
+  rpc CreateSimulation(SimulationInput) returns (Created);
+  rpc GetSimulation(GetSimulationRequest) returns (SimulationResource) { option idempotency_level = NO_SIDE_EFFECTS; }
+  rpc GetNode(GetNodeRequest) returns (Node) { option idempotency_level = NO_SIDE_EFFECTS; }
+  rpc GetComparison(GetComparisonRequest) returns (Comparison) { option idempotency_level = NO_SIDE_EFFECTS; }
+  rpc CreateComparison(ComparisonRequest) returns (Comparison);
+  rpc CreateWhatIf(CreateWhatIfRequest) returns (Comparison);
+  rpc CreateCashLadder(CreateCashLadderRequest) returns (Comparison);
+  rpc ListFields(ListFieldsRequest) returns (FieldList) { option idempotency_level = NO_SIDE_EFFECTS; }
+}
+message Created { string id = 1; }
+message GetSimulationRequest { string id = 1; }
+message GetNodeRequest { string id = 1; string path = 2; repeated string fields = 3; }
+message Node { bytes json = 1; }
+message GetComparisonRequest { repeated string ids = 1; optional string relative_to = 2; repeated string fields = 3; }
+message Comparison { repeated Summary rows = 1; optional Summary relative_to = 2; }
+message Summary { string id = 1; string name = 2; double total_cost = 3; }
+message CreateWhatIfRequest { string id = 1; repeated SimulationInput variations = 2; }
+message CreateCashLadderRequest { string id = 1; repeated double amounts = 2; }
+message ListFieldsRequest {}
+message FieldList { repeated string names = 1; }
+message SimulationResource { string id = 1; SimulationInput input = 2; Summary summary = 3; }

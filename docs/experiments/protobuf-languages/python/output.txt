@@ -1,0 +1,139 @@
+=== the .proto, read through the custom option ===
+  name                     contract     required
+  list_price               contract     required
+  months_remaining         contract     required
+  down_payment_pct         contract     default 20.0
+  fgts_upfront             contract     default 0.0
+  cash_upfront             contract     default 0.0
+  developer_installment    contract     nullable
+  balloon_months           contract     default []
+  incc_rate_pa             market       default 7.0
+  bank_rate_pa             market       default 10.26
+  term_months              market       default 360
+  itbi_pct                 market       default 2.0
+  registry_pct             market       default 0.5
+  income_commitment_ratio  market       default 0.3
+  pre_approved_credit      bank_credit  nullable
+  pro_soluto_months        bank_credit  default 12
+
+=== POST /api/simulations — proto3 JSON mapping (python protobuf) vs the contract vs the layer ===
+
+# body is an array
+  contract : 400 wrong_type body
+  protobuf : ParseError: Failed to parse 1 field: expected string or bytes-like object, got 'int'.
+  layer    : 400 wrong_type body
+
+# string for a number
+  contract : 400 wrong_type list_price
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 wrong_type list_price
+
+# boolean for a number
+  contract : 400 wrong_type list_price
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 1.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 wrong_type list_price
+
+# 19.0 for an integer
+  contract : accepted (19)
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : accepted
+
+# 19.5 for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : ParseError: Failed to parse months_remaining field: Couldn't parse integer: 19.5 at SimulationInput.months_remaining.
+  layer    : 400 wrong_type months_remaining
+
+# "19" for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 wrong_type months_remaining
+
+# true for an integer
+  contract : 400 wrong_type months_remaining
+  protobuf : ParseError: Failed to parse months_remaining field: Bool value True is not acceptable for integer field at SimulationInput
+  layer    : 400 wrong_type months_remaining
+
+# two unknown fields
+  contract : 400 unknown_field fgts_upfrnt
+  protobuf : ParseError: Message type "sincero.SimulationInput" has no field named "fgts_upfrnt" at "SimulationInput".
+ Available Field
+  layer    : 400 unknown_field fgts_upfrnt
+
+# camelCase alias
+  contract : 400 unknown_field listPrice
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 unknown_field listPrice
+
+# missing months_remaining
+  contract : 400 missing_field months_remaining
+  protobuf : ValueError: months_remaining is required
+  layer    : 400 missing_field months_remaining
+
+# null on itbi_pct
+  contract : 400 null_not_allowed itbi_pct
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 null_not_allowed itbi_pct
+
+# null on developer_installment
+  contract : accepted (absent)
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : accepted
+
+# NaN (parsed float)
+  contract : 400 not_finite list_price
+  protobuf : ParseError: Failed to parse list_price field: Couldn't parse NaN, use quoted "NaN" instead at SimulationInput.list_price.
+  layer    : 400 not_finite list_price
+
+# "NaN" (string)
+  contract : 400 wrong_type list_price
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": "NaN", "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 wrong_type list_price
+
+# list_price 10**400
+  contract : 400 not_finite list_price
+  protobuf : OverflowError: int too large to convert to float
+  layer    : 400 not_finite list_price
+
+# months_remaining 5000
+  contract : 400 out_of_range months_remaining
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 5000, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 out_of_range months_remaining
+
+# months_remaining 2**31
+  contract : 400 out_of_range months_remaining
+  protobuf : ParseError: Failed to parse months_remaining field: Value out of range: 2147483648.
+  layer    : 400 out_of_range months_remaining
+
+# balloon item 6.5
+  contract : 400 wrong_type balloon_months[1]
+  protobuf : ParseError: Failed to parse balloon_months field: Couldn't parse integer: 6.5 at SimulationInput.balloon_months[1].
+  layer    : 400 wrong_type balloon_months[1]
+
+# balloon item "12"
+  contract : 400 wrong_type balloon_months[1]
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "balloon_months": [6, 12], "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : 400 wrong_type balloon_months[1]
+
+# balloon item null
+  contract : 400 null_not_allowed balloon_months[1]
+  protobuf : ParseError: Failed to parse balloon_months field: null is not allowed to be used as an element in a repeated field at Simu
+  layer    : 400 null_not_allowed balloon_months[1]
+
+# omitted defaults
+  contract : accepted; down_payment_pct resolves to 20.0
+  protobuf : accepted -> {"name": "CUSTOM", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 0.0, "cash_upfront": 0.0, "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : accepted
+
+# the RA example
+  contract : accepted
+  protobuf : accepted -> {"name": "RA", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 13000.0, "cash_upfront": 0.0, "developer_installment": 2500.0, "balloon_months": [6, 12], "incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3, "pro_soluto_months": 12}
+  layer    : accepted
+
+=== nested: POST /api/comparisons ===
+  candidate[1].months_remaining as a string: 19 (accepted, coerced)
+
+=== the RA input as the three DTOs ===
+  {"contract": {"name": "RA", "list_price": 440000.0, "months_remaining": 19, "down_payment_pct": 20.0, "fgts_upfront": 13000.0, "cash_upfront": 0.0, "developer_installment": 2500.0, "balloon_months": [6, 12]}, "market": {"incc_rate_pa": 7.0, "bank_rate_pa": 10.26, "term_months": 360, "itbi_pct": 2.0, "registry_pct": 0.5, "income_commitment_ratio": 0.3}, "bank_credit": {"pre_approved_credit": null, "pro_soluto_months": 12}}
+  required down payment: 88000.0 remaining: 75000.0
+
+=== timing, the RA body, mean of 20000: ParseDict + resolve 35.1 us · the shape layer 20.3 us

@@ -1,0 +1,14 @@
+# RA
+  valid
+# list price 0, months 0
+  list_price: must be greater than 0
+  months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# months 5000
+  months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# down payment 150 %
+  down_payment_pct: must be greater than or equal to 0 and less than or equal to 100
+# repeated balloon, balloon 0
+  balloon_months: repeated value must contain unique items
+  balloon_months.[2]: must be greater than or equal to 1
+# upfront above the price (CEL)
+  (message): upfront payments exceed the list price
