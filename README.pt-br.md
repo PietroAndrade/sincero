@@ -116,3 +116,7 @@ A suíte executa apenas as features em inglês (`backend/features/`). As traduç
 
 Detalhes e vocabulário completo dos passos: [`backend/features/README.md`](backend/features/README.md).
 Estrutura técnica do backend: [`backend/README.md`](backend/README.md).
+
+## Licença
+
+Apache License 2.0. Veja [`LICENSE`](LICENSE).

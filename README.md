@@ -114,3 +114,7 @@ make report                       # Allure 3 report (requires: npm install -g al
 
 Details and the full step vocabulary: [`backend/features/README.md`](backend/features/README.md).
 Technical layout of the backend: [`backend/README.md`](backend/README.md).
+
+## License
+
+Apache License 2.0. See [`LICENSE`](LICENSE).
