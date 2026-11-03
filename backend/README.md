@@ -14,7 +14,8 @@ cash" simulations and a month-by-month cash-flow timeline.
 backend/
 ├── app/
 │   ├── models/                 # domain — pure Python, no I/O, no serialization
-│   │   ├── input_dto.py        #   ContractData / MarketData / BankCreditData — frozen DTOs, the defaults
+│   │   ├── input_fields.py     #   GENERATED from proto/ (make dto): ContractFields / MarketFields / BankCreditFields
+│   │   ├── input_dto.py        #   ContractData / MarketData / BankCreditData — the DTOs: the generated fields + derived amounts
 │   │   ├── input_interface.py  #   SimulationInputInterface — pure ABC (methods only): validate(), with_overrides()
 │   │   ├── inputs.py           #   SimulationInput — frozen dataclass of the three DTOs
 │   │   ├── validators.py       #   Validator[DTO] ABC, one small validator per concern, ValidationPolicy
@@ -37,6 +38,8 @@ backend/
 │       └── api_requests.py     # HTTP API shape layer: JSON body -> simulation inputs (400 rules, 422 pass),
 │                               #   for POST /api/simulations, /comparisons, …/what-if, …/cash-ladder
 │                               #   (Flask blueprint on top of it: milestone 5)
+├── proto/sincero/simulation_input.proto   # the input fields — names, types, defaults, nullable, group — one flat message
+├── tools/gen_dto.py            # .proto -> app/models/input_fields.py (make dto; tests fail while they disagree)
 ├── cli.py                      # entry point
 ├── features/                   # Gherkin business scenarios (English, executed) + behave hooks and thin steps
 │   ├── environment.py
@@ -67,7 +70,18 @@ make feature name=credit_gap       # one feature
 make tags tag=@more-cash           # a slice
 make unit                          # pytest
 make report                        # Allure 3 report (npm install -g allure)
+make dto                           # regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto
 ```
+
+## Adding or changing an input field
+
+The fields of the input DTOs are declared once, in `proto/sincero/simulation_input.proto`
+(one flat `SimulationInput` message; each field's `(sincero.field)` option names its owning
+group, its default and whether `null` is a value). Edit the `.proto`, run `make dto`, commit
+both: `tests/test_gen_dto.py` fails while `app/models/input_fields.py` and the `.proto`
+disagree. The CLI's `--help` and the API's `GET /api/fields` read the DTOs, so they follow.
+What the `.proto` does not carry: the CLI flag and help text (`cli_controller.py`), the unit
+and the API ceiling (`api_requests.py`), the model's validation rules (`validators.py`).
 
 ## Using the models directly
 

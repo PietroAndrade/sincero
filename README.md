@@ -78,7 +78,7 @@ Every option:
 | `--pre-approved` | credit pre-approved by the bank at signing | nominal balance |
 | `--pro-soluto-months` | months to pay the developer any credit gap | 12 |
 
-Defaults are defined once, in the model's input DTOs (`ContractData`, `MarketData`, `BankCreditData`); `--help` prints them.
+Defaults are defined once, in `backend/proto/sincero/simulation_input.proto`, from which the model's input DTOs (`ContractData`, `MarketData`, `BankCreditData`) are generated; `--help` prints them.
 
 ### API and web front-end
 

@@ -41,6 +41,11 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
     variations from a stored base ([decision](docs/decisions/what-if-as-comparison.md));
   - the **cash ladder** is a validated what-if preset (`POST /api/simulations/{id}/cash-ladder`,
     ascending non-negative amounts) whose response is the what-if's.
+- **Input fields declared once, in protobuf**: `backend/proto/sincero/simulation_input.proto` is the
+  source of truth for the input fields (names, types, defaults, nullable, owning DTO); the DTOs'
+  fields are generated from it (`make dto`) and a test fails on drift. The `.proto` is a build-time
+  schema only — the request path keeps the hand-written shape layer
+  ([decision](docs/decisions/input-fields-from-proto.md)).
 - **Validation at the API boundary**: `400` when the body cannot become a simulation input
   (shape, types, unknown fields — the controller's job, as argparse is for the CLI); `422` when the
   model rejects it (`SimulationError`, message verbatim, the same text the CLI prints).

@@ -77,7 +77,7 @@ Todas as opções:
 | `--pre-approved` | crédito pré-aprovado pelo banco na assinatura | saldo nominal |
 | `--pro-soluto-months` | meses para pagar à construtora um eventual gap de crédito | 12 |
 
-Os padrões são definidos uma única vez, nos DTOs de entrada do modelo (`ContractData`, `MarketData`, `BankCreditData`); `--help` os exibe.
+Os padrões são definidos uma única vez, em `backend/proto/sincero/simulation_input.proto`, de onde os DTOs de entrada do modelo (`ContractData`, `MarketData`, `BankCreditData`) são gerados; `--help` os exibe.
 
 ### API e front-end web
 
