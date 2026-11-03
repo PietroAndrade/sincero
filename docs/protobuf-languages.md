@@ -12,7 +12,7 @@ network (see [what was not run](#what-was-not-run)). Nothing here changes the ap
 generated `_pb2` messages cannot be the domain's DTOs (mutable, unhashable, zero-valued, no
 place for derived amounts), so a 270-line generator turns the `.proto` into frozen dataclasses;
 and no tool turns the `.proto` into the OpenAPI document, so a second generator produces the one
-component it can ([openapi.md](openapi.md)). The question was whether another language makes
+component it can (not part of this change). The question was whether another language makes
 protobuf a better fit — specifically TypeScript and C# — and how much is needed in each to
 use the same `.proto`, unchanged, for the same three jobs: **the DTOs**, **parsing the API's
 JSON**, and **the defaults and grouping the custom option carries**.
