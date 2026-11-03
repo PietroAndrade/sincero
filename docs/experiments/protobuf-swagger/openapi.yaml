@@ -1,0 +1,247 @@
+openapi: 3.1.0
+info:
+  title: SINCERO API (experiment)
+  version: 0.0.1
+paths:
+  /api/simulations:
+    post:
+      operationId: createSimulation
+      summary: Create a simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationInput'
+            examples:
+              RA:
+                value:
+                  name: RA
+                  list_price: 440000
+                  months_remaining: 19
+                  fgts_upfront: 13000
+                  developer_installment: 2500
+                  balloon_months:
+                  - 6
+                  - 12
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Shape error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/comparisons:
+    post:
+      operationId: createComparison
+      summary: Compare candidates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComparisonRequest'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    SimulationInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          default: CUSTOM
+        list_price:
+          type: number
+          maximum: 1000000000000.0
+          description: 'Unit: R$.'
+        months_remaining:
+          type: integer
+          maximum: 600.0
+          description: 'Unit: months.'
+        down_payment_pct:
+          type: number
+          maximum: 1000.0
+          default: 20.0
+          description: 'Unit: % of list price.'
+        fgts_upfront:
+          type: number
+          maximum: 1000000000000.0
+          default: 0.0
+          description: 'Unit: R$.'
+        cash_upfront:
+          type: number
+          maximum: 1000000000000.0
+          default: 0.0
+          description: 'Unit: R$.'
+        developer_installment:
+          type:
+          - number
+          - 'null'
+          maximum: 1000000000000.0
+          description: 'Unit: R$ per month.'
+        balloon_months:
+          type: array
+          items:
+            type: integer
+          maxItems: 60
+          default: []
+          description: 'Unit: months.'
+        incc_rate_pa:
+          type: number
+          maximum: 1000.0
+          default: 7.0
+          description: 'Unit: % per year.'
+        bank_rate_pa:
+          type: number
+          maximum: 1000.0
+          default: 10.26
+          description: 'Unit: % per year.'
+        term_months:
+          type: integer
+          maximum: 600.0
+          default: 360
+          description: 'Unit: months.'
+        itbi_pct:
+          type: number
+          maximum: 1000.0
+          default: 2.0
+          description: 'Unit: % of list price.'
+        registry_pct:
+          type: number
+          maximum: 1000.0
+          default: 0.5
+          description: 'Unit: % of list price.'
+        income_commitment_ratio:
+          type: number
+          default: 0.3
+          description: 'Unit: ratio 0-1.'
+        pre_approved_credit:
+          type:
+          - number
+          - 'null'
+          maximum: 1000000000000.0
+          description: 'Unit: R$.'
+        pro_soluto_months:
+          type: integer
+          maximum: 600.0
+          default: 12
+          description: 'Unit: months.'
+      required:
+      - list_price
+      - months_remaining
+    InputOverrides:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          default: CUSTOM
+        list_price:
+          type: number
+          maximum: 1000000000000.0
+          description: 'Unit: R$.'
+        months_remaining:
+          type: integer
+          maximum: 600.0
+          description: 'Unit: months.'
+        down_payment_pct:
+          type: number
+          maximum: 1000.0
+          default: 20.0
+          description: 'Unit: % of list price.'
+        fgts_upfront:
+          type: number
+          maximum: 1000000000000.0
+          default: 0.0
+          description: 'Unit: R$.'
+        cash_upfront:
+          type: number
+          maximum: 1000000000000.0
+          default: 0.0
+          description: 'Unit: R$.'
+        developer_installment:
+          type:
+          - number
+          - 'null'
+          maximum: 1000000000000.0
+          description: 'Unit: R$ per month.'
+        balloon_months:
+          type: array
+          items:
+            type: integer
+          maxItems: 60
+          default: []
+          description: 'Unit: months.'
+        incc_rate_pa:
+          type: number
+          maximum: 1000.0
+          default: 7.0
+          description: 'Unit: % per year.'
+        bank_rate_pa:
+          type: number
+          maximum: 1000.0
+          default: 10.26
+          description: 'Unit: % per year.'
+        term_months:
+          type: integer
+          maximum: 600.0
+          default: 360
+          description: 'Unit: months.'
+        itbi_pct:
+          type: number
+          maximum: 1000.0
+          default: 2.0
+          description: 'Unit: % of list price.'
+        registry_pct:
+          type: number
+          maximum: 1000.0
+          default: 0.5
+          description: 'Unit: % of list price.'
+        income_commitment_ratio:
+          type: number
+          default: 0.3
+          description: 'Unit: ratio 0-1.'
+        pre_approved_credit:
+          type:
+          - number
+          - 'null'
+          maximum: 1000000000000.0
+          description: 'Unit: R$.'
+        pro_soluto_months:
+          type: integer
+          maximum: 600.0
+          default: 12
+          description: 'Unit: months.'
+      minProperties: 1
+    ComparisonRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        base:
+          $ref: '#/components/schemas/InputOverrides'
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/InputOverrides'
+          minItems: 1
+          maxItems: 20
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      - code
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        field:
+          type: string
+        index:
+          type: integer
