@@ -8,6 +8,7 @@
 | [simulation-input-refactor.md](simulation-input-refactor.md) | Full design: the three input DTOs, the methods-only interface, `SimulationInput` as a frozen dataclass, per-DTO validators, components receiving only the DTO they need; the CLI crashes it fixed |
 | [decisions/reject-upfront-above-list-price.md](decisions/reject-upfront-above-list-price.md) | Why FGTS + cash above the list price is rejected |
 | [decisions/what-if-as-comparison.md](decisions/what-if-as-comparison.md) | Why the API has no `/api/what-if`: a what-if is a comparison with a reference row, variations are derived from a stored simulation, labels stay off the wire |
+| [decisions/field-specs-from-dtos.md](decisions/field-specs-from-dtos.md) | Why the API's shape layer (`app/controllers/api_requests.py`) derives its field specs — wire type, required, nullable, default — from the model DTOs instead of a second table, and why `GET /api/fields` is a projection of those same specs |
 | [reference/](reference/) | Early prototype scripts kept for reference, not part of the application |
 | [../ROADMAP.md](../ROADMAP.md) | Milestones and decisions |
 | [../backend/features/README.md](../backend/features/README.md) | Business model assumptions and step vocabulary |

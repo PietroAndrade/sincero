@@ -33,7 +33,10 @@ backend/
 │   │   ├── json_view.py        # SimulationResult -> dict (the API / front-end contract)
 │   │   └── text_view.py        # SimulationResult -> terminal report
 │   └── controllers/
-│       └── cli_controller.py   # argparse -> models -> views   (Flask API blueprint: milestone 5)
+│       ├── cli_controller.py   # argparse -> models -> views
+│       └── api_requests.py     # HTTP API shape layer: JSON body -> simulation inputs (400 rules, 422 pass),
+│                               #   for POST /api/simulations, /comparisons, …/what-if, …/cash-ladder
+│                               #   (Flask blueprint on top of it: milestone 5)
 ├── cli.py                      # entry point
 ├── features/                   # Gherkin business scenarios (English, executed) + behave hooks and thin steps
 │   ├── environment.py
