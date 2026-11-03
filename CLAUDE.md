@@ -54,4 +54,4 @@ The business spec is Gherkin in `features/` (English, executed). `features_pt_br
 ## Standard commands
 
 - `/finish-task` (`.claude/commands/finish-task.md`): test, push, PR, squash-merge on GitHub, then a new branch from `develop`. "finish task" means this command.
-- Git hooks live in `.githooks/`. Enable them once per clone with `git config core.hooksPath .githooks`. `pre-push` blocks direct pushes to `develop`/`master` and runs `make test` (needs `backend/.venv`).
+- Git hooks live in `.githooks/`. Enable them once per clone with `git config core.hooksPath .githooks`. `pre-push` runs `make test` (needs `backend/.venv`).

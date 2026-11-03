@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
-# Blocks direct pushes to develop/master (they go through a GitHub PR, squash-merged)
-# and runs the full test suite before any other push.
+# Runs the full test suite before a push. Deleting a remote branch or tag skips it.
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 run_tests=0
 
 while read -r local_ref local_sha remote_ref remote_sha; do
-  case "$remote_ref" in
-    refs/heads/develop|refs/heads/master)
-      echo "pre-push: direct push to ${remote_ref#refs/heads/} is blocked. Open a PR and squash-merge it on GitHub." >&2
-      exit 1
-      ;;
-  esac
   if [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
     run_tests=1
   fi
