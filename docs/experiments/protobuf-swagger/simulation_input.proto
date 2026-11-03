@@ -1,0 +1,31 @@
+// Experiment: can one .proto be the declaration of the input fields, with OpenAPI 3.1 and
+// Swagger UI generated from it? Same sixteen fields as ../protobuf-validation/.
+syntax = "proto3";
+package sincero;
+
+import "sincero_options.proto";
+
+// A simulation request: the flat input of `POST /api/simulations`.
+message SimulationInput {
+  optional string name = 1 [(unit) = "", (default_json) = "\"CUSTOM\""];
+  optional double list_price = 2 [(required) = true, (unit) = "R$", (maximum) = 1e12];
+  optional int32  months_remaining = 3 [(required) = true, (unit) = "months", (maximum) = 600];
+  optional double down_payment_pct = 4 [(unit) = "% of list price", (maximum) = 1000, (default_json) = "20.0"];
+  optional double fgts_upfront = 5 [(unit) = "R$", (maximum) = 1e12, (default_json) = "0.0"];
+  optional double cash_upfront = 6 [(unit) = "R$", (maximum) = 1e12, (default_json) = "0.0"];
+  optional double developer_installment = 7 [(unit) = "R$ per month", (maximum) = 1e12];   // nullable
+  repeated int32  balloon_months = 8 [(unit) = "months", (max_items) = 60, (default_json) = "[]"];
+  optional double incc_rate_pa = 9 [(unit) = "% per year", (maximum) = 1000, (default_json) = "7.0"];
+  optional double bank_rate_pa = 10 [(unit) = "% per year", (maximum) = 1000, (default_json) = "10.26"];
+  optional int32  term_months = 11 [(unit) = "months", (maximum) = 600, (default_json) = "360"];
+  optional double itbi_pct = 12 [(unit) = "% of list price", (maximum) = 1000, (default_json) = "2.0"];
+  optional double registry_pct = 13 [(unit) = "% of list price", (maximum) = 1000, (default_json) = "0.5"];
+  optional double income_commitment_ratio = 14 [(unit) = "ratio 0-1", (default_json) = "0.3"];
+  optional double pre_approved_credit = 15 [(unit) = "R$", (maximum) = 1e12];               // nullable
+  optional int32  pro_soluto_months = 16 [(unit) = "months", (maximum) = 600, (default_json) = "12"];
+}
+
+message ComparisonRequest {
+  optional SimulationInput base = 1;
+  repeated SimulationInput candidates = 2 [(max_items) = 20];
+}

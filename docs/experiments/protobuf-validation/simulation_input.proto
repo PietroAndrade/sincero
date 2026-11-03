@@ -1,0 +1,30 @@
+// Experiment: can proto3's JSON mapping validate `POST /api/simulations`?
+// Every scalar is `optional` so that presence can be told from the zero value —
+// proto3 has no custom defaults, so "omitted => 20.0" must be applied after parsing.
+syntax = "proto3";
+package sincero;
+
+message SimulationInput {
+  optional string name = 1;
+  optional double list_price = 2;
+  optional int32  months_remaining = 3;
+  optional double down_payment_pct = 4;
+  optional double fgts_upfront = 5;
+  optional double cash_upfront = 6;
+  optional double developer_installment = 7;   // the contract's `number|null`
+  repeated int32  balloon_months = 8;
+  optional double incc_rate_pa = 9;
+  optional double bank_rate_pa = 10;
+  optional int32  term_months = 11;
+  optional double itbi_pct = 12;
+  optional double registry_pct = 13;
+  optional double income_commitment_ratio = 14;
+  optional double pre_approved_credit = 15;    // the contract's `number|null`
+  optional int32  pro_soluto_months = 16;
+}
+
+// POST /api/comparisons
+message ComparisonRequest {
+  optional SimulationInput base = 1;
+  repeated SimulationInput candidates = 2;
+}

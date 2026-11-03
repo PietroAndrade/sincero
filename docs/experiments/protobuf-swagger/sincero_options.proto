@@ -1,0 +1,13 @@
+// Custom field options: what proto3 cannot say itself and OpenAPI/JSON Schema needs.
+syntax = "proto3";
+package sincero;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  optional bool   required = 50001;   // proto3 has no `required`
+  optional double maximum  = 50002;   // API limit (docs/api-contract.md, "API limits")
+  optional string unit     = 50003;
+  optional string default_json = 50004;  // JSON literal; proto3 has no custom defaults
+  optional uint32 max_items = 50005;     // for repeated fields
+}
