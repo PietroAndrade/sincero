@@ -5,7 +5,7 @@
 [`../experiments/protobuf-languages/connect/`](../experiments/protobuf-languages/connect/) (a
 TypeScript client on a Python Connect server, run end to end, the real model behind it).
 Supersedes, if accepted, the REST shape of [`../api-contract.md`](../api-contract.md) revision 6
-and the plan in [`../openapi.md`](../openapi.md); the business rules, the JSON payload of a
+and the OpenAPI experiment in [`../experiments/openapi/`](../experiments/openapi/); the business rules, the JSON payload of a
 simulation and the behave suite are untouched.*
 
 ## Context

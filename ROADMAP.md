@@ -41,6 +41,11 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
     variations from a stored base ([decision](docs/decisions/what-if-as-comparison.md));
   - the **cash ladder** is a validated what-if preset (`POST /api/simulations/{id}/cash-ladder`,
     ascending non-negative amounts) whose response is the what-if's.
+- **Proposed — the API as a Connect RPC service, backend in Python, front-end in TypeScript**
+  ([decision](docs/decisions/api-protocol-and-language.md)): one `.proto` generates the Python
+  service and the browser client; Connect / gRPC-Web without a proxy; `buf.validate` rules replace
+  the hand-written shape layer. If accepted, milestone 5 changes from Flask/REST to `connectrpc`
+  and `api-contract.md` gets a revision 7.
 - **Input fields declared once, in protobuf**: `backend/proto/sincero/simulation_input.proto` is the
   source of truth for the input fields (names, types, defaults, nullable, owning DTO); the DTOs'
   fields are generated from it (`make dto`) and a test fails on drift. The `.proto` is a build-time

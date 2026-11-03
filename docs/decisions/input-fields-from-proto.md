@@ -87,5 +87,8 @@ derived amounts on `ContractData`).
   the `.proto` diff next to it.
 - `grpcio-tools` (and its `protobuf` runtime) joins `requirements-dev.txt`; the `pre-push` hook's
   `make test` needs it installed in `backend/.venv`.
-- The `.proto` is ready for a TypeScript client or an OpenAPI component to be generated from
-  it when milestone 6 needs them; that generation is not part of this decision.
+- Generating an OpenAPI document from the same `.proto` was tried and not adopted: the input
+  schemas could be generated, but the routes, responses and errors could not, and the API is
+  moving to a protobuf service where the `.proto` is itself the reference. The experiment is kept in
+  [`../experiments/openapi/`](../experiments/openapi/); the client for a TypeScript front-end is
+  generated from the `.proto` (see [api-protocol-and-language](api-protocol-and-language.md)).
