@@ -5,10 +5,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fromJson, toJson } from "@bufbuild/protobuf";
+import { create, fromBinary, fromJson, isFieldSet, toBinary, toJson, type JsonValue } from "@bufbuild/protobuf";
 import { SimulationInputSchema, type SimulationInput } from "./gen/sincero/simulation_input_pb.js";
 import { FIELDS, parse, resolve, split, requiredDownPayment, remainingDownPayment, DEFAULT_NAME } from "./experiment.js";
 import { violations } from "./rules.js";
+import { ValidatedInputSchema } from "./gen/sincero_rules_pb.js";
 
 const RA = { name: "RA", list_price: 440000, months_remaining: 19, fgts_upfront: 13000, developer_installment: 2500, balloon_months: [6, 12] };
 
@@ -77,4 +78,16 @@ test("validation rules declared in the .proto are enforced (protovalidate)", () 
     ["(message): upfront payments exceed the list price"]);
   assert.deepEqual(violations({ listPrice: 440000, monthsRemaining: 19, balloonMonths: [6, 6, 0] }),
     ["balloon_months: repeated value must contain unique items", "balloon_months.[2]: must be greater than or equal to 1"]);
+});
+
+test("a required field absent is refused as required, and 0 as out of range (optional + required)", () => {
+  const json = (body: Record<string, unknown>) => violations(fromJson(ValidatedInputSchema, body as JsonValue));
+  assert.deepEqual(json({}), ["list_price: value is required", "months_remaining: value is required"]);
+  assert.deepEqual(json({ list_price: 440000, months_remaining: null }), ["months_remaining: value is required"]);
+  assert.deepEqual(json({ list_price: 440000, months_remaining: 0 }),
+    ["months_remaining: must be greater than or equal to 1 and less than or equal to 600"]);
+  assert.deepEqual(json({ months_remaining: 19, fgts_upfront: 13000 }), ["list_price: value is required"]);   // CEL quiet
+  const zero = create(ValidatedInputSchema, { listPrice: 440000, monthsRemaining: 0 });
+  const back = fromBinary(ValidatedInputSchema, toBinary(ValidatedInputSchema, zero));
+  assert.equal(isFieldSet(back, ValidatedInputSchema.field.monthsRemaining), true);   // 0 survives the binary wire
 });

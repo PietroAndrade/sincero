@@ -105,12 +105,19 @@
   {"contract":{"name":"RA","list_price":440000,"months_remaining":19,"down_payment_pct":20,"fgts_upfront":13000,"cash_upfront":0,"developer_installment":2500,"balloon_months":[6,12]},"market":{"incc_rate_pa":7,"bank_rate_pa":10.26,"term_months":360,"itbi_pct":2,"registry_pct":0.5,"income_commitment_ratio":0.3},"bank_credit":{"pro_soluto_months":12}}
   required down payment: 88000 remaining: 75000
 
-=== timing: fromJson + resolve, the RA body, mean of 20000: 2.7 us
+=== timing: fromJson + resolve, the RA body, mean of 20000: 3.0 us
 # RA
   valid
 # list price 0, months 0
   list_price: must be greater than 0
   months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# list price and months absent
+  list_price: value is required
+  months_remaining: value is required
+# months absent
+  months_remaining: value is required
+# list price absent, FGTS set (the CEL rule stays quiet)
+  list_price: value is required
 # months 5000
   months_remaining: must be greater than or equal to 1 and less than or equal to 600
 # down payment 150 %

@@ -4,6 +4,7 @@ Shared by the Python experiment: compile the protos into a temporary directory a
     backend/proto/sincero/simulation_input.proto   -> sincero.simulation_input_pb2   (grpcio-tools' protoc)
     ../proto/sincero_rules.proto                   -> sincero_rules_pb2               (+ buf/validate/validate_pb2,
                                                       from the descriptor set ../proto/buf_validate.binpb)
+    ../proto/presence_variants.proto               -> presence_variants_pb2           (same)
 
 Run from anywhere with the backend's virtualenv: it needs `grpcio-tools`, `protobuf` and
 `protovalidate` (`pip install protovalidate`).
@@ -31,9 +32,10 @@ def compile_all():
     common = ["protoc", f"-I{BACKEND / 'proto'}", f"-I{PROTO}", f"-I{include}", f"--python_out={out}"]
     assert protoc.main([*common, "sincero/simulation_input.proto"]) == 0
     assert protoc.main([*common, f"--descriptor_set_in={PROTO / 'buf_validate.binpb'}",
-                        "buf/validate/validate.proto", "sincero_rules.proto"]) == 0
+                        "buf/validate/validate.proto", "sincero_rules.proto", "presence_variants.proto"]) == 0
     sys.path.insert(0, out)
-    return importlib.import_module("sincero.simulation_input_pb2"), importlib.import_module("sincero_rules_pb2")
+    return (importlib.import_module("sincero.simulation_input_pb2"), importlib.import_module("sincero_rules_pb2"),
+            importlib.import_module("presence_variants_pb2"))
 
 
-pb, rules_pb = compile_all()
+pb, rules_pb, presence_pb = compile_all()

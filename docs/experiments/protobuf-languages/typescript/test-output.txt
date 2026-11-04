@@ -10,51 +10,57 @@ TAP version 13
 # Subtest: the generated type is the DTO: a plain object, camelCase, optional fields undefined when absent
 ok 1 - the generated type is the DTO: a plain object, camelCase, optional fields undefined when absent
   ---
-  duration_ms: 3.411563
+  duration_ms: 3.209469
   type: 'test'
   ...
 # Subtest: the .proto's defaults, groups and nullability are readable from the custom option
 ok 2 - the .proto's defaults, groups and nullability are readable from the custom option
   ---
-  duration_ms: 0.815182
+  duration_ms: 0.708154
   type: 'test'
   ...
 # Subtest: resolve applies the defaults and reports missing required fields
 ok 3 - resolve applies the defaults and reports missing required fields
   ---
-  duration_ms: 0.890538
+  duration_ms: 0.626178
   type: 'test'
   ...
 # Subtest: proto3 JSON mapping: what it refuses that the contract refuses
 ok 4 - proto3 JSON mapping: what it refuses that the contract refuses
   ---
-  duration_ms: 1.034966
+  duration_ms: 0.595328
   type: 'test'
   ...
 # Subtest: proto3 JSON mapping: what it accepts that the contract refuses
 ok 5 - proto3 JSON mapping: what it accepts that the contract refuses
   ---
-  duration_ms: 0.830292
+  duration_ms: 0.52683
   type: 'test'
   ...
 # Subtest: the wire stays snake_case
 ok 6 - the wire stays snake_case
   ---
-  duration_ms: 1.577796
+  duration_ms: 1.145619
   type: 'test'
   ...
 # Subtest: validation rules declared in the .proto are enforced (protovalidate)
 ok 7 - validation rules declared in the .proto are enforced (protovalidate)
   ---
-  duration_ms: 72.157274
+  duration_ms: 74.774291
   type: 'test'
   ...
-1..7
-# tests 7
+# Subtest: a required field absent is refused as required, and 0 as out of range (optional + required)
+ok 8 - a required field absent is refused as required, and 0 as out of range (optional + required)
+  ---
+  duration_ms: 2.466519
+  type: 'test'
+  ...
+1..8
+# tests 8
 # suites 0
-# pass 7
+# pass 8
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 421.212441
+# duration_ms 385.871142

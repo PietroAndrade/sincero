@@ -3,6 +3,13 @@
 # list price 0, months 0
   list_price: must be greater than 0
   months_remaining: must be greater than or equal to 1 and less than or equal to 600
+# list price and months absent
+  list_price: value is required
+  months_remaining: value is required
+# months absent
+  months_remaining: value is required
+# list price absent, FGTS set (the CEL rule stays quiet)
+  list_price: value is required
 # months 5000
   months_remaining: must be greater than or equal to 1 and less than or equal to 600
 # down payment 150 %

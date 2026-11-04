@@ -1,0 +1,35 @@
+# A_PlainRejectZero
+  {}                           refused: must be greater than or equal to 1 and less than or equal to 600                present=n/a   wire=0
+  {'months_remaining': None}   refused: must be greater than or equal to 1 and less than or equal to 600                present=n/a   wire=0
+  {'months_remaining': 0}      refused: must be greater than or equal to 1 and less than or equal to 600                present=n/a   wire=0
+  {'months_remaining': 19}     accepted                                                                                 present=n/a   wire=2
+# B_PlainRequired
+  {}                           refused: value is required                                                               present=n/a   wire=0
+  {'months_remaining': None}   refused: value is required                                                               present=n/a   wire=0
+  {'months_remaining': 0}      refused: value is required                                                               present=n/a   wire=0
+  {'months_remaining': 19}     accepted                                                                                 present=n/a   wire=2
+# C_OptionalOnly
+  {}                           accepted                                                                                 present=False wire=0
+  {'months_remaining': None}   accepted                                                                                 present=False wire=0
+  {'months_remaining': 0}      refused: must be greater than or equal to 1 and less than or equal to 600                present=True  wire=2
+  {'months_remaining': 19}     accepted                                                                                 present=True  wire=2
+# D_OptionalRequired
+  {}                           refused: value is required                                                               present=False wire=0
+  {'months_remaining': None}   refused: value is required                                                               present=False wire=0
+  {'months_remaining': 0}      refused: must be greater than or equal to 1 and less than or equal to 600                present=True  wire=2
+  {'months_remaining': 19}     accepted                                                                                 present=True  wire=2
+# E_PlainCelHas
+  {}                           refused: months_remaining is required; must be greater than or equal to 1 and less than or equal to 600 present=n/a   wire=0
+  {'months_remaining': None}   refused: months_remaining is required; must be greater than or equal to 1 and less than or equal to 600 present=n/a   wire=0
+  {'months_remaining': 0}      refused: months_remaining is required; must be greater than or equal to 1 and less than or equal to 600 present=n/a   wire=0
+  {'months_remaining': 19}     accepted                                                                                 present=n/a   wire=2
+# F_PlainZeroIsValid
+  {}                           accepted                                                                                 present=n/a   wire=0
+  {'amount': None}             accepted                                                                                 present=n/a   wire=0
+  {'amount': 0}                accepted                                                                                 present=n/a   wire=0
+  {'amount': 5}                accepted                                                                                 present=n/a   wire=2
+# G_OptionalRequiredZeroIsValid
+  {}                           refused: value is required                                                               present=False wire=0
+  {'amount': None}             refused: value is required                                                               present=False wire=0
+  {'amount': 0}                accepted                                                                                 present=True  wire=2
+  {'amount': 5}                accepted                                                                                 present=True  wire=2
