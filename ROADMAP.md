@@ -45,9 +45,13 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
   ([decision](docs/decisions/api-protocol-and-language.md), accepted 2026-11-03): one `.proto`
   generates the Python service and the browser client; Connect / gRPC-Web without a proxy;
   `buf.validate` rules replace the hand-written shape layer. The result is typed messages read with
-  a `FieldMask`, a failed model rule is `invalid_argument` with an `ErrorInfo` detail, and required
-  fields stay plain scalars whose zero value `protovalidate` rejects. `api-contract.md` revision 6
-  (REST) is the source of the business semantics until revision 7 restates it as RPCs.
+  a `FieldMask`, and a failed model rule is `invalid_argument` with an `ErrorInfo` detail.
+  `api-contract.md` revision 6 (REST) is the source of the business semantics until revision 7
+  restates it as RPCs.
+- **A required input field has explicit presence**: `optional` + `(buf.validate.field).required`,
+  so an absent field and an invalid one are refused with different violations, before the model runs
+  ([decision](docs/decisions/required-fields-explicit-presence.md), accepted 2026-11-04). Applying it
+  to `simulation_input.proto` is task 5.3c.
 - **Input fields declared once, in protobuf**: `backend/proto/sincero/simulation_input.proto` is the
   source of truth for the input fields (names, types, defaults, nullable, owning DTO); the DTOs'
   fields are generated from it (`make dto`) and a test fails on drift. The `.proto` is a build-time

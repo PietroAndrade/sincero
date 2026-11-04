@@ -183,29 +183,33 @@ the `months_remaining 0` lines of the round trip).
 **Rejected.** `failed_precondition` for the model's rules, to keep the `400`/`422` distinction as
 two codes. The distinction survives as the detail type, without a code that promises a retry.
 
-### 3. The "absent" trap: plain scalars and rules that reject zero
+### 3. The "absent" trap: `optional` plus `required`
 
-**Choice.** Required fields stay plain scalars and `protovalidate` rejects the zero value. The
-generator and the TypeScript types stay as they are.
+**Choice.** A required field is declared `optional` (explicit presence) and carries
+`(buf.validate.field).required = true` next to its range rule. An absent field and an invalid one
+are refused with different violations: `value is required` for the first, the range message for the
+second. The first choice here was plain scalars with a rule that rejects zero. Comparing seven
+variants showed it could not say "required" and could not protect a field whose zero is valid, so it
+was replaced on 2026-11-04. The evidence and the full reasoning are in
+[required-fields-explicit-presence](required-fields-explicit-presence.md).
 
 **Reason.** In proto3 a plain scalar cannot tell zero from missing, and `to_json()` drops zero
 values; that is how `months_remaining: 0` became a `500` in the experiment
-([`connect/README.md`](../experiments/protobuf-languages/connect/README.md), lines 28-29, and
-the presence check in `connect/server/connect_server.py`). For a required field whose zero is
-never valid, "zero" and "missing" are the same refusal, so presence does not need to be known.
-The `optional` route would change the generated Python and TypeScript for fields that need no
-distinction; converting field by field keeps the conversion that failed.
+([`connect/README.md`](../experiments/protobuf-languages/connect/README.md), lines 28-29).
+`optional` alone is worse than nothing, since the rules of an unset field are skipped and an absent
+field gets through; `required` closes that. The experiment's tests refuse an absent or zero
+`list_price` and `months_remaining` before the model runs
+([`test_experiment.py`](../experiments/protobuf-languages/python/test_experiment.py)).
 
-| Required field (no default in [`simulation_input.proto`](../../backend/proto/sincero/simulation_input.proto)) | Rule that rejects its zero value |
-|---|---|
-| `list_price` | `double.gt = 0` (as in [`sincero_rules.proto`](../experiments/protobuf-languages/proto/sincero_rules.proto)) |
-| `months_remaining` | `int32.gte = 1` (with the API ceiling `lte = 600`) |
-| `name` | none needed: the empty string is the unnamed simulation, and the service resolves it to `"CUSTOM"` ([contract](../api-contract.md), field table), so absent and `""` mean the same thing |
+| Required field (no default in [`simulation_input.proto`](../../backend/proto/sincero/simulation_input.proto)) | Declared as | Absent | Zero or out of range |
+|---|---|---|---|
+| `list_price` | `optional`, `required`, `double.gt = 0` | `value is required` | `must be greater than 0` |
+| `months_remaining` | `optional`, `required`, `int32 = {gte: 1, lte: 600}` | `value is required` | the range message |
+| `name` | unchanged, no rule | the empty string is the unnamed simulation and the service resolves it to `"CUSTOM"` ([contract](../api-contract.md), field table) | none |
 
-`balloon_months` is `repeated`, not required: empty is its default. Any new required field is
-added to this table with its rule, or is declared `optional` with a default.
+`balloon_months` is `repeated`, not required: empty is its default. A new required field is declared
+the same way, or is `optional` with a default.
 
-**Rejected.** `optional` plus `required`, and field-by-field conversion, for the reasons above.
-The test that proves the rules refuse `months_remaining: 0` and `list_price: 0` before the model
-(task 5.3b) lives with the experiment's tests in
-`docs/experiments/protobuf-languages/python/`.
+**Rejected.** Plain scalars with a rule that rejects zero (the first choice), `optional` without
+`required`, and converting field by field against the descriptor, for the reasons in the linked
+decision.
