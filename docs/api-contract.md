@@ -1,6 +1,10 @@
 # API contract — simulations
 
-*Status: proposed (milestone 5), revision 6. Revision 2 replaced the single `POST /api/simulate`
+*Status: reference for the Connect service, revision 6. The API is no longer REST
+([decision](decisions/api-protocol-and-language.md), accepted 2026-11-03): the routes, status codes
+and error bodies below are not built. This document stays as the source of the business semantics
+(ids, lifetime, comparisons, what-ifs, cash ladders, fields, error cases) from which the RPCs of the
+`service Simulations` are derived; revision 7 (task 5.4) restates it as RPCs. Revision 2 replaced the single `POST /api/simulate`
 that answered with the whole payload by a simulation resource; revision 3 added
 [comparisons](#comparisons); revision 4 added [what-ifs](#what-ifs) — which turn out to be
 comparisons with a reference row; revision 5 gave the [cash ladder](#cash-ladders) its own pass

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). Only the Python backend (milestones 1–4) exists; the Flask API, React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
+SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). Only the Python backend (milestones 1–4) exists; the Connect API (a protobuf service served by `connectrpc`), React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
 
 Everything lives under `backend/` (Python 3.11+); run all commands from there.
 
@@ -33,7 +33,7 @@ MVC with a strict dependency direction `controllers → views → models`.
 
 - `app/models/`: pure-Python domain, no I/O or serialization. `simulator.py` (`simulate(SimulationInput) -> SimulationResult`) composes the small models (`down_payment`, `mortgage`, `construction`, `closing_costs`, `amortization`, `credit_gap`, `total_cost`, `timeline`). `comparison.py` provides `compare()`, `what_if()`, `cash_ladder()`. Inputs: the fields are declared once in `proto/sincero/simulation_input.proto` and generated into `input_fields.py` by `tools/gen_dto.py` (`make dto`; `tests/test_gen_dto.py` fails while they disagree — never edit the generated file); `input_dto.py` holds the three frozen DTOs that subclass them (`ContractData` — also derives `required_down_payment`/`upfront`/`remaining_down_payment` —, `MarketData`, `BankCreditData`); `input_interface.py` the pure, methods-only ABC (`SimulationInputInterface`: `validate()`, `with_overrides()`); `inputs.py` the frozen dataclass `SimulationInput(contract, market, bank_credit)` with `from_dict`/`to_dict` for the flat JSON/CLI form; `validators.py` the small `Validator[DTO]`s grouped per DTO in `DEFAULT_POLICY`. Components receive only the DTO they need (`DownPaymentPlan(contract, …)`, `ClosingCosts(list_price, market)`, `CreditGap(bank_credit, …)`). See `docs/simulation-input-refactor.md`. Validation errors are `SimulationError` (`errors.py`).
 - `app/views/json_view.py`: `simulation_to_dict` / `input_from_dict` define the JSON payload, which is the contract for the future API and front-end. `text_view.py` renders the terminal report.
-- `app/controllers/cli_controller.py`: argparse → models → views. `cli.py` is the entry point. `api_requests.py` is the HTTP shape layer (JSON body → inputs, the `400`/`422` rules of `docs/api-contract.md`); the Flask API controller is milestone 5.
+- `app/controllers/cli_controller.py`: argparse → models → views. `cli.py` is the entry point. `api_requests.py` is the HTTP shape layer (JSON body → inputs, the `400`/`422` rules of `docs/api-contract.md`); the Connect service replaces it in milestone 5 (decision: `docs/decisions/api-protocol-and-language.md`).
 
 Domain rules that span several files (details in the root README table):
 - Month 0 is signing, months 1..N are construction, N is key handover, and bank installments start at N+1.

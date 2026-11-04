@@ -207,5 +207,5 @@ added to this table with its rule, or is declared `optional` with a default.
 
 **Rejected.** `optional` plus `required`, and field-by-field conversion, for the reasons above.
 The test that proves the rules refuse `months_remaining: 0` and `list_price: 0` before the model
-(task 5.3, item 2) lives with the experiment's tests in
+(task 5.3b) lives with the experiment's tests in
 `docs/experiments/protobuf-languages/python/`.
