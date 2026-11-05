@@ -2,6 +2,11 @@
 // contract's `422` table) live in the .proto and be enforced by the protobuf toolchain?
 // A copy of three fields of `sincero.SimulationInput` with `buf.validate` rules — standard
 // constraints and one CEL expression across fields.
+//
+// Required fields are `optional` + `(buf.validate.field).required = true` — explicit presence,
+// so an absent field ("value is required") and an invalid one (the range rule) are two different
+// violations. `optional` alone would skip the rules when the field is unset and let an absent
+// field through. Decision: docs/decisions/required-fields-explicit-presence.md.
 syntax = "proto3";
 package sincero.rules;
 
@@ -11,10 +16,12 @@ message ValidatedInput {
   option (buf.validate.message).cel = {
     id: "upfront_within_price"
     message: "upfront payments exceed the list price"
-    expression: "this.fgts_upfront + this.cash_upfront <= this.list_price"
+    // an absent list price is reported once, by `required`, not again as a price of 0
+    expression: "!has(this.list_price) || this.fgts_upfront + this.cash_upfront <= this.list_price"
   };
-  double list_price = 1 [(buf.validate.field).double.gt = 0];
-  int32 months_remaining = 2 [(buf.validate.field).int32 = {gte: 1, lte: 600}];   // the 422 rule and the API ceiling, together
+  optional double list_price = 1 [(buf.validate.field).required = true, (buf.validate.field).double.gt = 0];
+  optional int32 months_remaining = 2 [(buf.validate.field).required = true,
+                                       (buf.validate.field).int32 = {gte: 1, lte: 600}];   // the 422 rule and the API ceiling, together
   optional double down_payment_pct = 3 [(buf.validate.field).double = {gte: 0, lte: 100}];
   optional double fgts_upfront = 4 [(buf.validate.field).double.gte = 0];
   optional double cash_upfront = 5 [(buf.validate.field).double.gte = 0];

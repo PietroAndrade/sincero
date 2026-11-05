@@ -8,11 +8,37 @@ file the TypeScript experiment enforces with `@bufbuild/protovalidate`.
 from __future__ import annotations
 
 import protovalidate
+from google.protobuf import json_format
+
 from _setup import rules_pb
 
 
 def violations(**fields) -> list[str]:
-    msg = rules_pb.ValidatedInput(**fields)
+    return _violations(rules_pb.ValidatedInput(**fields))
+
+
+def violations_of_body(body: dict) -> list[str]:
+    """
+    The same rules on a JSON body, parsed as a Connect server parses it (the proto3 JSON mapping).
+    `ValidatedInput` copies six of the sixteen input fields, so the other keys are ignored here.
+    """
+    return _violations(json_format.ParseDict(body, rules_pb.ValidatedInput(), ignore_unknown_fields=True))
+
+
+def simulate_if_valid(body: dict):
+    """
+    The order a server keeps: the rules of the .proto first, the model only for a body they accept.
+    Returns the violations (the model never ran) or the model's `SimulationResult`.
+    """
+    refused = violations_of_body(body)
+    if refused:
+        return refused
+    from app.models import field_defaults, simulate           # the backend's model, unchanged
+    from app.views import input_from_dict
+    return simulate(input_from_dict({**field_defaults(), "name": "CUSTOM", **body}))
+
+
+def _violations(msg) -> list[str]:
     try:
         protovalidate.validate(msg)
         return []
@@ -33,6 +59,9 @@ def _path(violation) -> str:
 CASES = [
     ("RA", dict(list_price=440000, months_remaining=19, fgts_upfront=13000, balloon_months=[6, 12])),
     ("list price 0, months 0", dict(list_price=0, months_remaining=0)),
+    ("list price and months absent", dict()),
+    ("months absent", dict(list_price=440000)),
+    ("list price absent, FGTS set (the CEL rule stays quiet)", dict(months_remaining=19, fgts_upfront=13000)),
     ("months 5000", dict(list_price=440000, months_remaining=5000)),
     ("down payment 150 %", dict(list_price=440000, months_remaining=19, down_payment_pct=150)),
     ("repeated balloon, balloon 0", dict(list_price=440000, months_remaining=19, balloon_months=[6, 6, 0])),

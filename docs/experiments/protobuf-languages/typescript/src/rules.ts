@@ -18,6 +18,9 @@ if (process.argv[1]?.endsWith("rules.js")) {
   const cases: [string, MessageInitShape<typeof ValidatedInputSchema>][] = [
     ["RA", { listPrice: 440000, monthsRemaining: 19, fgtsUpfront: 13000, balloonMonths: [6, 12] }],
     ["list price 0, months 0", { listPrice: 0, monthsRemaining: 0 }],
+    ["list price and months absent", {}],
+    ["months absent", { listPrice: 440000 }],
+    ["list price absent, FGTS set (the CEL rule stays quiet)", { monthsRemaining: 19, fgtsUpfront: 13000 }],
     ["months 5000", { listPrice: 440000, monthsRemaining: 5000 }],
     ["down payment 150 %", { listPrice: 440000, monthsRemaining: 19, downPaymentPct: 150 }],
     ["repeated balloon, balloon 0", { listPrice: 440000, monthsRemaining: 19, balloonMonths: [6, 6, 0] }],

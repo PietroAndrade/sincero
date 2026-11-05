@@ -8,7 +8,7 @@ npm install            # @bufbuild/buf (protoc replacement), @bufbuild/protoc-ge
                        # @bufbuild/protovalidate, typescript
 npm run generate       # buf generate ../../../../backend/proto  ->  src/gen/sincero/simulation_input_pb.ts
 npm run experiment     # the contract's JSON bodies through fromJson(); the custom option; resolve(); rules
-npm test               # 7 small tests pinning the findings (node --test)
+npm test               # 8 small tests pinning the findings (node --test)
 ```
 
 | File | What |

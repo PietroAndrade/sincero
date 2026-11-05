@@ -1,6 +1,7 @@
 # Roadmap
 
-Each milestone number links to its task breakdown in [tasks.md](tasks.md).
+Each milestone number links to its task breakdown in [tasks.md](tasks.md). Rows are in the order of
+work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
 
 | # | Milestone | Status |
 |---|---|---|
@@ -8,13 +9,18 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
 | [2](tasks.md#m2-python-engine-and-cli) | Workable Python engine + CLI | ✅ |
 | [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ |
 | [4](tasks.md#m4-mvc-backend) | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ |
-| [5](tasks.md#m5-flask-api) | Flask API controller, to the contract in [docs/api-contract.md](docs/api-contract.md): simulations as resources (`POST /api/simulations`, `GET /api/simulations/{id}[/path]`), `GET /api/fields`, comparisons (`GET`/`POST /api/comparisons`), what-ifs (`…?relative_to=`, `POST /api/simulations/{id}/what-if`), cash ladder (`POST /api/simulations/{id}/cash-ladder`); API-level behave features through an `HttpGateway` | 📝 contract specified |
+| [5](tasks.md#m5-connect-api-protobuf-service) | Connect API: a protobuf service (`service Simulations`) served by `connectrpc` from the Python backend, with the TypeScript client generated from the same `.proto`. The business semantics of [docs/api-contract.md](docs/api-contract.md) (simulations as resources, comparisons, what-ifs, cash ladder, fields) become RPCs in its revision 7; API-level behave features through a `ConnectGateway` | 📝 decided, contract to restate |
 | [6](tasks.md#m6-react-front-end) | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |
+| [8](tasks.md#m8-ui-acceptance-tests) | UI acceptance tests: behave + Playwright against the local processes (`make api` + Vite dev server); the compose service comes with M7 | ⬜ |
 | [7](tasks.md#m7-docker) | Docker: `docker-compose` with backend, frontend (nginx), behave test service | ⬜ |
-| [8](tasks.md#m8-ui-acceptance-tests) | UI acceptance tests: behave + Playwright against the running stack | ⬜ |
-| [9](tasks.md#m9-extensions) | Extensions: live INCC (FGV), TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ |
+| [9](tasks.md#m9-extensions) | Extensions: live INCC (FGV's index, republished by the Banco Central's SGS API) first, TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ |
 
 ## Decisions taken (open questions from the handoff)
+
+- **Order of work** (2026-11-04, [docs/plan/prd.md](docs/plan/prd.md)): the UI (M6) starts as soon as the API
+  runs over Connect with the behave suite passing over the wire (5.14). Playwright (M8) comes right
+  after it, against the local processes, and Docker (M7) after that. The tool is public, with the
+  interface in Portuguese and English.
 
 - **Months** always mean *months remaining until delivery*, never the project's total duration.
 - **Construction interest**: INCC-corrected balance × (k/N) × bank rate — the bank releases the balance
@@ -41,11 +47,17 @@ Each milestone number links to its task breakdown in [tasks.md](tasks.md).
     variations from a stored base ([decision](docs/decisions/what-if-as-comparison.md));
   - the **cash ladder** is a validated what-if preset (`POST /api/simulations/{id}/cash-ladder`,
     ascending non-negative amounts) whose response is the what-if's.
-- **Proposed — the API as a Connect RPC service, backend in Python, front-end in TypeScript**
-  ([decision](docs/decisions/api-protocol-and-language.md)): one `.proto` generates the Python
-  service and the browser client; Connect / gRPC-Web without a proxy; `buf.validate` rules replace
-  the hand-written shape layer. If accepted, milestone 5 changes from Flask/REST to `connectrpc`
-  and `api-contract.md` gets a revision 7.
+- **The API is a Connect RPC service, backend in Python, front-end in TypeScript**
+  ([decision](docs/decisions/api-protocol-and-language.md), accepted 2026-11-03): one `.proto`
+  generates the Python service and the browser client; Connect / gRPC-Web without a proxy;
+  `buf.validate` rules replace the hand-written shape layer. The result is typed messages read with
+  a `FieldMask`, and a failed model rule is `invalid_argument` with an `ErrorInfo` detail.
+  `api-contract.md` revision 6 (REST) is the source of the business semantics until revision 7
+  restates it as RPCs.
+- **A required input field has explicit presence**: `optional` + `(buf.validate.field).required`,
+  so an absent field and an invalid one are refused with different violations, before the model runs
+  ([decision](docs/decisions/required-fields-explicit-presence.md), accepted 2026-11-04). Applying it
+  to `simulation_input.proto` is task 5.3c.
 - **Input fields declared once, in protobuf**: `backend/proto/sincero/simulation_input.proto` is the
   source of truth for the input fields (names, types, defaults, nullable, owning DTO); the DTOs'
   fields are generated from it (`make dto`) and a test fails on drift. The `.proto` is a build-time

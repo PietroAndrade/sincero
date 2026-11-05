@@ -1,0 +1,43 @@
+// Evidence for docs/decisions/required-fields-explicit-presence.md: the ways a required field
+// can be protected against being absent with `buf.validate`, one message per variant, one field
+// each. Enforced by `protovalidate` in ../python/presence.py (output: ../python/presence-output.txt).
+//
+// In proto3 a plain scalar has implicit presence: `{}`, `{"months_remaining": null}` and
+// `{"months_remaining": 0}` are the same message, and nothing goes on the wire. Only `optional`
+// (explicit presence) lets a rule tell "absent" from "0".
+syntax = "proto3";
+package sincero.presence;
+
+import "buf/validate/validate.proto";
+
+// A. plain scalar + a rule that rejects its zero value (the earlier choice)
+message A_PlainRejectZero {
+  int32 months_remaining = 1 [(buf.validate.field).int32 = {gte: 1, lte: 600}];
+}
+// B. plain scalar + required: for implicit presence, "required" means "not the zero value"
+message B_PlainRequired {
+  int32 months_remaining = 1 [(buf.validate.field).required = true, (buf.validate.field).int32 = {gte: 1, lte: 600}];
+}
+// C. optional alone: the rules are skipped while the field is unset
+message C_OptionalOnly {
+  optional int32 months_remaining = 1 [(buf.validate.field).int32 = {gte: 1, lte: 600}];
+}
+// D. optional + required: explicit presence, and the check that it is present (the choice)
+message D_OptionalRequired {
+  optional int32 months_remaining = 1 [(buf.validate.field).required = true, (buf.validate.field).int32 = {gte: 1, lte: 600}];
+}
+// E. plain scalar + a message-level CEL has(): on implicit presence has() means "!= 0"
+message E_PlainCelHas {
+  option (buf.validate.message).cel = {
+    id: "months_remaining_required", message: "months_remaining is required", expression: "has(this.months_remaining)"
+  };
+  int32 months_remaining = 1 [(buf.validate.field).int32 = {gte: 1, lte: 600}];
+}
+// F. the limit of A: a required field whose zero is a valid value
+message F_PlainZeroIsValid {
+  int32 amount = 1 [(buf.validate.field).int32.gte = 0];
+}
+// G. the same field as D does it
+message G_OptionalRequiredZeroIsValid {
+  optional int32 amount = 1 [(buf.validate.field).required = true, (buf.validate.field).int32.gte = 0];
+}
