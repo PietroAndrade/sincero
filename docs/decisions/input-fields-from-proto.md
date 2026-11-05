@@ -25,6 +25,8 @@ derived amounts on `ContractData`).
 1. **One `.proto`, one flat message.** `backend/proto/sincero/simulation_input.proto` declares
    `SimulationInput` with the sixteen fields in DTO order, plus the three other request bodies
    of the contract (`ComparisonRequest`, `WhatIfRequest`, `CashLadderRequest`) for completeness.
+   *(Since moved, as `CreateComparisonRequest`, `CreateWhatIfRequest` and
+   `CreateCashLadderRequest`, to `simulations_service.proto`, next to the RPCs that take them.)*
    The message is flat because the wire body is flat; the owning DTO is a **field option**,
    `(sincero.field).group`, not nesting.
 2. **What proto3 cannot say goes in the option.** proto3 has no custom defaults and no

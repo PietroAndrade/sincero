@@ -32,12 +32,43 @@ cash on the table.
 
 ## Running the application
 
-Requirements: Python 3.11+.
+Requirements: Python 3.11+, and Node.js with npm (only to generate the TypeScript client). No Docker yet.
 
 ```bash
+git config core.hooksPath .githooks        # once per clone: pre-push runs `make test`
 cd backend
-pip install -r requirements-dev.txt        # runtime + behave + pytest
+python3 -m venv .venv
+source .venv/bin/activate                  # the Makefile calls `python3` from the PATH
+pip install -r requirements-dev.txt        # runtime + behave + pytest + protoc plugins
+npm ci --prefix ../frontend                # protoc-gen-es, at the version of the lockfile
 ```
+
+### Verify
+
+From `backend/`, with the venv active:
+
+```bash
+make test           # pytest + every behave scenario
+make proto-check    # the generated code (Python and TypeScript) matches the .proto files
+```
+
+Both must exit with code 0 (`make test; echo $?`). `pytest.ini` sets `-q`, so no "N passed" line
+is printed: trust the exit code, or run `python -m pytest -rA`. Two test modules skip when the
+generators are missing (`connectrpc` for Python, `frontend/node_modules` for TypeScript), which
+turns `pytest` green without checking that side; `python -m pytest -rs` lists what was skipped, and
+`make proto-check` installs the TypeScript plugin itself and checks both sides.
+
+One piece at a time:
+
+| To check | Run |
+|---|---|
+| The service and its RPCs | `python -m pytest tests/test_service_definition.py` |
+| Every REST route and error `code` of revision 6 has its RPC / Connect code | `python -m pytest tests/test_api_contract.py` |
+| Errors become `BadRequest` / `ErrorInfo` | `python -m pytest tests/test_connect_errors.py` |
+| `make proto` leaves no diff | `make proto-check` |
+
+If `make proto-check` reports a diff on a clean clone, suspect the plugin versions: the Python ones
+are pinned in `requirements-dev.txt`, the TypeScript one by `frontend/package-lock.json`.
 
 ### Command line (available now)
 

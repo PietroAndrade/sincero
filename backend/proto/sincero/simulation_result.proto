@@ -1,0 +1,239 @@
+// SINCERO — the outputs of a simulation, as the API returns them.
+//
+// Typed messages for the payload of `app/views/json_view.py` (decision
+// docs/decisions/api-protocol-and-language.md, question 1: typed messages, not JSON bytes):
+//
+//   * `SimulationResult` mirrors `simulation_to_dict`: its ten sections, field by field, with
+//     the same names, so the proto JSON of a result (with proto field names) is that dict.
+//   * `Summary` mirrors `summary_to_dict`: the flat, table/chart friendly figures of one
+//     simulation — one row of a comparison.
+//
+// The messages only carry figures the model computed; none of them is an input the client
+// sends. Money is R$, rates are fractions per month unless a name says `_pct` (0-100).
+// When `simulation_to_dict` or `summary_to_dict` change, these messages change with them.
+syntax = "proto3";
+
+package sincero;
+
+import "sincero/simulation_input.proto";
+
+// ----- one simulation, whole: `simulation_to_dict` -------------------------------------------
+
+// Every figure of one simulation. The sections are the keys of `simulation_to_dict`.
+message SimulationResult {
+  // The resolved input: defaults applied, `name` resolved ("CUSTOM" when it was empty);
+  // an unset nullable field (`developer_installment`, `pre_approved_credit`) is `null`.
+  SimulationInput input = 1;
+  Rates rates = 2;
+  DownPayment down_payment = 3;
+  Mortgage mortgage = 4;
+  ConstructionInterest construction_interest = 5;
+  ClosingCosts closing_costs = 6;
+  Financing financing = 7;
+  CreditGap credit_gap = 8;
+  TotalCost total_cost = 9;
+  Timeline timeline = 10;
+}
+
+// The annual rates of the input as compounded monthly rates (fractions: 0.0056 = 0.56%).
+message Rates {
+  double incc_pm = 1;
+  double bank_pm = 2;
+}
+
+// The down payment owed to the developer during construction (`DownPaymentPlan`).
+message DownPayment {
+  // Down payment required by the developer, R$ (`down_payment_pct` of the list price).
+  double required = 1;
+  // FGTS + cash paid at signing, R$.
+  double upfront = 2;
+  // What is left to pay the developer after signing, R$ (nominal).
+  double remaining = 3;
+  // Monthly installment before INCC, R$: the chosen one, or `remaining` split in equal parts.
+  double nominal_installment = 4;
+  // What the monthly installments leave for the balloons, R$ (nominal).
+  double missing_amount = 5;
+  // One balloon before INCC, R$; 0 without balloons.
+  double nominal_balloon = 6;
+  repeated Balloon balloons = 7;
+  // Everything paid to the developer after signing, INCC-corrected, R$.
+  double total_paid = 8;
+  // `total_paid - remaining`: what the INCC adds to the down payment, R$.
+  double incc_correction = 9;
+  // Month by month, 1..months_remaining.
+  repeated DeveloperPayment schedule = 10;
+}
+
+// A lump sum owed to the developer in a construction month, before INCC.
+message Balloon {
+  int32 month = 1;
+  double nominal = 2;
+}
+
+// What the developer receives in one construction month, INCC-corrected.
+message DeveloperPayment {
+  int32 month = 1;
+  // `(1 + incc_pm)^month`.
+  double incc_factor = 2;
+  // The regular installment, R$.
+  double installment = 3;
+  // The balloon paid this month, R$; 0 if none.
+  double balloon = 4;
+}
+
+// The balance transferred to the bank at delivery (`MortgageBalance`).
+message Mortgage {
+  // List price minus the down payment (or the upfront, if larger), R$.
+  double nominal_balance = 1;
+  // The nominal balance corrected by INCC until delivery, R$.
+  double corrected_balance = 2;
+  // `corrected_balance - nominal_balance`, R$.
+  double hidden_incc_debt = 3;
+}
+
+// Construction interest (juros de obra) paid to the bank before delivery.
+message ConstructionInterest {
+  double total = 1;
+  repeated ConstructionCharge schedule = 2;
+}
+
+message ConstructionCharge {
+  int32 month = 1;
+  // Share of the financed balance the bank has released so far, 0-1.
+  double released_share = 2;
+  // The corrected balance times the released share, R$.
+  double released_balance = 3;
+  double interest = 4;
+}
+
+// ITBI and registry/deed costs, R$.
+message ClosingCosts {
+  double itbi = 1;
+  double registry = 2;
+  double total = 3;
+}
+
+// The bank financing of the corrected balance, under both amortization systems.
+message Financing {
+  SacSchedule sac = 1;
+  PriceSchedule price = 2;
+}
+
+// Sistema de Amortização Constante: fixed amortization, decreasing installments.
+message SacSchedule {
+  double first_installment = 1;
+  double last_installment = 2;
+  double total_interest = 3;
+  double total_paid = 4;
+  // First installment / income_commitment_ratio, R$ per month.
+  double min_income = 5;
+  repeated Installment schedule = 6;
+  // The constant amortization, R$ per month.
+  double amortization = 7;
+}
+
+// Tabela Price: fixed installment, increasing amortization.
+message PriceSchedule {
+  double first_installment = 1;
+  double last_installment = 2;
+  double total_interest = 3;
+  double total_paid = 4;
+  // First installment / income_commitment_ratio, R$ per month.
+  double min_income = 5;
+  repeated Installment schedule = 6;
+  // The constant installment, R$ per month.
+  double installment = 7;
+}
+
+// One month of a bank schedule; the month counts from delivery (1..term_months).
+message Installment {
+  int32 month = 1;
+  double installment = 2;
+  double interest = 3;
+  double amortization = 4;
+  // The balance after this payment.
+  double outstanding = 5;
+}
+
+// The "Caixa trigger": extra credit needed at delivery and the resulting pro-soluto.
+message CreditGap {
+  // The credit approved at signing, R$ (the input, or the nominal balance when it was null).
+  double pre_approved = 1;
+  // The corrected balance at delivery, R$.
+  double needed = 2;
+  // `max(0, needed - pre_approved)`, R$: owed to the developer.
+  double gap = 3;
+  int32 pro_soluto_months = 4;
+  double pro_soluto_installment = 5;
+}
+
+// Everything paid on top of the list price until delivery.
+message TotalCost {
+  double list_price = 1;
+  double additional = 2;
+  // `list_price + additional`.
+  double total = 3;
+  // `additional / list_price * 100`.
+  double extra_pct = 4;
+  // One line per component, then a last line named "Total".
+  repeated CostLine breakdown = 5;
+}
+
+message CostLine {
+  string component = 1;
+  double base_value = 2;
+  double additional = 3;
+  // `base_value + additional`.
+  double final_value = 4;
+}
+
+// Month-by-month cash flow, from signing (month 0) to the last bank installment.
+message Timeline {
+  repeated TimelineMonth months = 1;
+  // The most expensive month of the construction phase (months 0..months_remaining).
+  int32 peak_month = 2;
+  double peak_total = 3;
+  // Everything paid from signing to delivery, R$.
+  double construction_phase_total = 4;
+}
+
+message TimelineMonth {
+  int32 month = 1;
+  double developer_installment = 2;
+  double balloon = 3;
+  double construction_interest = 4;
+  double bank_installment = 5;
+  double upfront = 6;
+  // The sum of the other amounts of the month.
+  double total = 7;
+}
+
+// ----- one simulation, one row: `summary_to_dict` --------------------------------------------
+
+// The figures of one simulation that a comparison puts side by side, R$ unless stated.
+message Summary {
+  string name = 1;
+  double list_price = 2;
+  int32 months_remaining = 3;
+  double cash_upfront = 4;
+  // The nominal monthly installment to the developer (chosen or derived).
+  double developer_installment = 5;
+  double nominal_balloon = 6;
+  double incc_on_down_payment = 7;
+  double hidden_incc_debt = 8;
+  // The corrected mortgage balance.
+  double balance_at_delivery = 9;
+  double construction_interest = 10;
+  double closing_costs = 11;
+  double sac_first_installment = 12;
+  double sac_last_installment = 13;
+  double price_installment = 14;
+  double min_income_sac = 15;
+  double min_income_price = 16;
+  double credit_gap = 17;
+  double total_cost = 18;
+  // % over the list price.
+  double extra_pct = 19;
+  int32 peak_month = 20;
+  double peak_total = 21;
+}

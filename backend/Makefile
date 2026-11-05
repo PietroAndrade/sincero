@@ -2,7 +2,14 @@ PY ?= python3
 BEHAVE = $(PY) -m behave
 BEHAVE_ALLURE = -f pretty -o - -f allure -o allure-results
 
-.PHONY: features feature tags unit test report cli dto
+# `make proto` / `make proto-check`: tools/gen_proto.py, the code of proto/sincero/*.proto (and
+# the vendored google/rpc/error_details.proto) for both sides — app/gen/ (Python: protoc-gen-py,
+# protoc-gen-connectrpc) and ../frontend/src/gen/ (TypeScript: protoc-gen-es, from
+# ../frontend/package-lock.json, installed here first). tests/test_gen_proto.py runs the check too.
+FRONTEND = ../frontend
+FRONTEND_DEPS = $(FRONTEND)/node_modules/.package-lock.json
+
+.PHONY: features feature tags unit test report cli dto proto proto-check
 
 features:            ## run every BDD scenario
 	$(BEHAVE)
@@ -29,3 +36,12 @@ cli:                 ## reference properties report
 
 dto:                 ## regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto (needs grpcio-tools)
 	$(PY) tools/gen_dto.py
+
+proto: $(FRONTEND_DEPS)        ## regenerate app/gen/ and ../frontend/src/gen/ from proto/ (needs requirements-dev, npm)
+	$(PY) tools/gen_proto.py
+
+proto-check: $(FRONTEND_DEPS)  ## fail (with a diff) while app/gen/ or ../frontend/src/gen/ is stale
+	$(PY) tools/gen_proto.py --check
+
+$(FRONTEND_DEPS): $(FRONTEND)/package.json $(FRONTEND)/package-lock.json   # npm ci when the lockfile changes
+	npm ci --prefix $(FRONTEND)

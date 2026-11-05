@@ -1,2 +1,4 @@
 flask>=3.0
 flask-cors>=4.0
+connectrpc>=0.13          # the Connect runtime of app/gen/ (make proto)
+protovalidate>=2.1        # the .proto rules; app/gen/ imports its buf.validate code; pulls protobuf-py (the messages' runtime)
