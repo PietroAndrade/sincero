@@ -14,10 +14,15 @@
 //   * `SimulationInput` is one FLAT message: the body of `POST /api/simulations` is one flat
 //     object (docs/api-contract.md), and the split into three DTOs is a model concern. The
 //     owner of a field is the `group` of its `(sincero.field)` option, never nesting.
-//   * A plain scalar is REQUIRED (it has no default; the dataclass field has none either).
-//   * An `optional` scalar may be omitted on the wire. It must say what omission means:
-//     a `default_*` (proto3 has no custom defaults, so the option carries it) or
-//     `nullable: true` — `null` is a value, "let the model size it" (`Optional[...] = None`).
+//   * A plain scalar becomes a required dataclass field; on the wire it can't be told apart from
+//     its zero value. Use it only when absent and zero mean the same thing (`name`).
+//   * A field that must be present is `optional` + `(buf.validate.field).required = true`: a
+//     required dataclass field (no default), and on the wire "absent" is refused apart from
+//     "invalid" (docs/decisions/required-fields-explicit-presence.md). Never `optional` without
+//     `required`, a default or `nullable`.
+//   * An `optional` field that may be omitted says what omission means: a `default_*` (proto3 has
+//     no custom defaults, so the option carries it) or `nullable: true` — `null` is a value,
+//     "let the model size it" (`Optional[...] = None`).
 //   * A `repeated` field defaults to empty and becomes a tuple.
 //   * Within a group, required fields come before optional ones (a dataclass rule).
 //   * Field names are unique across groups: a flat `field -> value` mapping (a JSON body,
@@ -32,6 +37,7 @@
 
 import type { GenEnum, GenExtension, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, extDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import { file_buf_validate_validate } from "../buf/validate/validate_pb.js";
 import type { FieldOptions } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_descriptor } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -40,7 +46,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sincero/simulation_input.proto.
  */
 export const file_sincero_simulation_input: GenFile = /*@__PURE__*/
-  fileDesc("Ch5zaW5jZXJvL3NpbXVsYXRpb25faW5wdXQucHJvdG8SB3NpbmNlcm8ilgEKCUZpZWxkTWV0YRIdCgVncm91cBgBIAEoDjIOLnNpbmNlcm8uR3JvdXASGAoOZGVmYXVsdF9udW1iZXIYAiABKAFIABIZCg9kZWZhdWx0X2ludGVnZXIYAyABKAVIABIYCg5kZWZhdWx0X3N0cmluZxgEIAEoCUgAEhAKCG51bGxhYmxlGAUgASgIQgkKB2RlZmF1bHQihAcKD1NpbXVsYXRpb25JbnB1dBIUCgRuYW1lGAEgASgJQgaKtRgCCAESGgoKbGlzdF9wcmljZRgCIAEoAUIGirUYAggBEiAKEG1vbnRoc19yZW1haW5pbmcYAyABKAVCBoq1GAIIARIuChBkb3duX3BheW1lbnRfcGN0GAQgASgBQg+KtRgLCAERAAAAAAAANEBIAIgBARIqCgxmZ3RzX3VwZnJvbnQYBSABKAFCD4q1GAsIAREAAAAAAAAAAEgBiAEBEioKDGNhc2hfdXBmcm9udBgGIAEoAUIPirUYCwgBEQAAAAAAAAAASAKIAQESLAoVZGV2ZWxvcGVyX2luc3RhbGxtZW50GAcgASgBQgiKtRgECAEoAUgDiAEBEh4KDmJhbGxvb25fbW9udGhzGAggAygFQgaKtRgCCAESKgoMaW5jY19yYXRlX3BhGAkgASgBQg+KtRgLCAIRAAAAAAAAHEBIBIgBARIqCgxiYW5rX3JhdGVfcGEYCiABKAFCD4q1GAsIAhGF61G4HoUkQEgFiAEBEiMKC3Rlcm1fbW9udGhzGAsgASgFQgmKtRgFCAIY6AJIBogBARImCghpdGJpX3BjdBgMIAEoAUIPirUYCwgCEQAAAAAAAABASAeIAQESKgoMcmVnaXN0cnlfcGN0GA0gASgBQg+KtRgLCAIRAAAAAAAA4D9ICIgBARI1ChdpbmNvbWVfY29tbWl0bWVudF9yYXRpbxgOIAEoAUIPirUYCwgCETMzMzMzM9M/SAmIAQESKgoTcHJlX2FwcHJvdmVkX2NyZWRpdBgPIAEoAUIIirUYBAgDKAFICogBARIoChFwcm9fc29sdXRvX21vbnRocxgQIAEoBUIIirUYBAgDGAxIC4gBAUITChFfZG93bl9wYXltZW50X3BjdEIPCg1fZmd0c191cGZyb250Qg8KDV9jYXNoX3VwZnJvbnRCGAoWX2RldmVsb3Blcl9pbnN0YWxsbWVudEIPCg1faW5jY19yYXRlX3BhQg8KDV9iYW5rX3JhdGVfcGFCDgoMX3Rlcm1fbW9udGhzQgsKCV9pdGJpX3BjdEIPCg1fcmVnaXN0cnlfcGN0QhoKGF9pbmNvbWVfY29tbWl0bWVudF9yYXRpb0IWChRfcHJlX2FwcHJvdmVkX2NyZWRpdEIUChJfcHJvX3NvbHV0b19tb250aHMidwoRQ29tcGFyaXNvblJlcXVlc3QSKwoEYmFzZRgBIAEoCzIYLnNpbmNlcm8uU2ltdWxhdGlvbklucHV0SACIAQESLAoKY2FuZGlkYXRlcxgCIAMoCzIYLnNpbmNlcm8uU2ltdWxhdGlvbklucHV0QgcKBV9iYXNlIj0KDVdoYXRJZlJlcXVlc3QSLAoKdmFyaWF0aW9ucxgBIAMoCzIYLnNpbmNlcm8uU2ltdWxhdGlvbklucHV0IiQKEUNhc2hMYWRkZXJSZXF1ZXN0Eg8KB2Ftb3VudHMYASADKAEqSQoFR3JvdXASFQoRR1JPVVBfVU5TUEVDSUZJRUQQABIMCghDT05UUkFDVBABEgoKBk1BUktFVBACEg8KC0JBTktfQ1JFRElUEAM6SQoFZmllbGQSHS5nb29nbGUucHJvdG9idWYuRmllbGRPcHRpb25zGNGGAyABKAsyEi5zaW5jZXJvLkZpZWxkTWV0YVIFZmllbGRiBnByb3RvMw", [file_google_protobuf_descriptor]);
+  fileDesc("Ch5zaW5jZXJvL3NpbXVsYXRpb25faW5wdXQucHJvdG8SB3NpbmNlcm8ilgEKCUZpZWxkTWV0YRIdCgVncm91cBgBIAEoDjIOLnNpbmNlcm8uR3JvdXASGAoOZGVmYXVsdF9udW1iZXIYAiABKAFIABIZCg9kZWZhdWx0X2ludGVnZXIYAyABKAVIABIYCg5kZWZhdWx0X3N0cmluZxgEIAEoCUgAEhAKCG51bGxhYmxlGAUgASgIQgkKB2RlZmF1bHQi0AcKD1NpbXVsYXRpb25JbnB1dBIUCgRuYW1lGAEgASgJQgaKtRgCCAESMAoKbGlzdF9wcmljZRgCIAEoAUIXukgOEgkhAAAAAAAAAADIAQGKtRgCCAFIAIgBARIyChBtb250aHNfcmVtYWluaW5nGAMgASgFQhO6SAoaBRjYBCgByAEBirUYAggBSAGIAQESLgoQZG93bl9wYXltZW50X3BjdBgEIAEoAUIPirUYCwgBEQAAAAAAADRASAKIAQESKgoMZmd0c191cGZyb250GAUgASgBQg+KtRgLCAERAAAAAAAAAABIA4gBARIqCgxjYXNoX3VwZnJvbnQYBiABKAFCD4q1GAsIAREAAAAAAAAAAEgEiAEBEiwKFWRldmVsb3Blcl9pbnN0YWxsbWVudBgHIAEoAUIIirUYBAgBKAFIBYgBARIeCg5iYWxsb29uX21vbnRocxgIIAMoBUIGirUYAggBEioKDGluY2NfcmF0ZV9wYRgJIAEoAUIPirUYCwgCEQAAAAAAABxASAaIAQESKgoMYmFua19yYXRlX3BhGAogASgBQg+KtRgLCAIRhetRuB6FJEBIB4gBARIjCgt0ZXJtX21vbnRocxgLIAEoBUIJirUYBQgCGOgCSAiIAQESJgoIaXRiaV9wY3QYDCABKAFCD4q1GAsIAhEAAAAAAAAAQEgJiAEBEioKDHJlZ2lzdHJ5X3BjdBgNIAEoAUIPirUYCwgCEQAAAAAAAOA/SAqIAQESNQoXaW5jb21lX2NvbW1pdG1lbnRfcmF0aW8YDiABKAFCD4q1GAsIAhEzMzMzMzPTP0gLiAEBEioKE3ByZV9hcHByb3ZlZF9jcmVkaXQYDyABKAFCCIq1GAQIAygBSAyIAQESKAoRcHJvX3NvbHV0b19tb250aHMYECABKAVCCIq1GAQIAxgMSA2IAQFCDQoLX2xpc3RfcHJpY2VCEwoRX21vbnRoc19yZW1haW5pbmdCEwoRX2Rvd25fcGF5bWVudF9wY3RCDwoNX2ZndHNfdXBmcm9udEIPCg1fY2FzaF91cGZyb250QhgKFl9kZXZlbG9wZXJfaW5zdGFsbG1lbnRCDwoNX2luY2NfcmF0ZV9wYUIPCg1fYmFua19yYXRlX3BhQg4KDF90ZXJtX21vbnRoc0ILCglfaXRiaV9wY3RCDwoNX3JlZ2lzdHJ5X3BjdEIaChhfaW5jb21lX2NvbW1pdG1lbnRfcmF0aW9CFgoUX3ByZV9hcHByb3ZlZF9jcmVkaXRCFAoSX3Byb19zb2x1dG9fbW9udGhzIncKEUNvbXBhcmlzb25SZXF1ZXN0EisKBGJhc2UYASABKAsyGC5zaW5jZXJvLlNpbXVsYXRpb25JbnB1dEgAiAEBEiwKCmNhbmRpZGF0ZXMYAiADKAsyGC5zaW5jZXJvLlNpbXVsYXRpb25JbnB1dEIHCgVfYmFzZSI9Cg1XaGF0SWZSZXF1ZXN0EiwKCnZhcmlhdGlvbnMYASADKAsyGC5zaW5jZXJvLlNpbXVsYXRpb25JbnB1dCIkChFDYXNoTGFkZGVyUmVxdWVzdBIPCgdhbW91bnRzGAEgAygBKkkKBUdyb3VwEhUKEUdST1VQX1VOU1BFQ0lGSUVEEAASDAoIQ09OVFJBQ1QQARIKCgZNQVJLRVQQAhIPCgtCQU5LX0NSRURJVBADOkkKBWZpZWxkEh0uZ29vZ2xlLnByb3RvYnVmLkZpZWxkT3B0aW9ucxjRhgMgASgLMhIuc2luY2Vyby5GaWVsZE1ldGFSBWZpZWxkYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_descriptor]);
 
 /**
  * What the generator needs to know about one input field beyond its type.
@@ -113,16 +119,16 @@ export type SimulationInput = Message<"sincero.SimulationInput"> & {
   /**
    * List price, R$.
    *
-   * @generated from field: double list_price = 2;
+   * @generated from field: optional double list_price = 2;
    */
-  listPrice: number;
+  listPrice?: number | undefined;
 
   /**
    * Months left until the building is delivered (time left, not the project's total duration).
    *
-   * @generated from field: int32 months_remaining = 3;
+   * @generated from field: optional int32 months_remaining = 3;
    */
-  monthsRemaining: number;
+  monthsRemaining?: number | undefined;
 
   /**
    * Down payment required by the developer, % of the list price.

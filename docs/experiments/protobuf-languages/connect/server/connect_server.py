@@ -13,15 +13,15 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path[:0] = [str(HERE / "gen"), str(HERE.parents[4] / "backend")]
+sys.path[:0] = [str(HERE), str(HERE.parents[4] / "backend")]
 
 import protovalidate                                                     # noqa: E402
 from connectrpc._codec import proto_binary_codec, proto_json_codec       # noqa: E402
 from connectrpc.code import Code                                         # noqa: E402
 from connectrpc.errors import ConnectError                               # noqa: E402
 from connectrpc.request import RequestContext                            # noqa: E402
-from sincero import api_connect, api_pb                                  # noqa: E402  (generated)
-from sincero.simulation_input_pb import SimulationInput                  # noqa: E402  (generated from the backend's .proto)
+from gen.sincero import api_connect, api_pb                                  # noqa: E402  (generated)
+from gen.sincero.simulation_input_pb import SimulationInput                  # noqa: E402  (generated from the backend's .proto)
 
 from app.models import SimulationError, simulate                         # noqa: E402  the model, unchanged
 from app.views import input_from_dict, simulation_to_dict, summary_to_dict   # noqa: E402  the views, unchanged
