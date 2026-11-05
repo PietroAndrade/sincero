@@ -169,3 +169,55 @@ message Input {
 def test_generator_refuses_a_proto_that_does_not_compile(tmp_path):
     with pytest.raises(GeneratorError, match="protoc failed"):
         render_proto(tmp_path, "message Input { double a = 1 [(sincero.field) = {group: NOWHERE}]; }")
+
+
+# ----- explicit presence: `optional` + `(buf.validate.field).required` -----------------------
+def render_validated(tmp_path: Path, body: str) -> str:
+    """Like `render_proto`, with `buf/validate/validate.proto` imported."""
+    name = f"case_{uuid.uuid4().hex[:8]}"
+    (tmp_path / "cases").mkdir(exist_ok=True)
+    (tmp_path / "cases" / f"{name}.proto").write_text(
+        f'syntax = "proto3";\npackage sincero.{name};\n'
+        'import "sincero/simulation_input.proto";\nimport "buf/validate/validate.proto";\n' + body)
+    return render(f"cases/{name}.proto", [tmp_path, PROTO_DIR], "Input")
+
+
+REQ = "(buf.validate.field).required = true"
+
+
+def test_required_presence_maps_to_a_required_field(tmp_path):
+    source = render_validated(tmp_path, one_of_each_group(
+        f"optional double x = 2 [(sincero.field) = {{group: CONTRACT}}, {REQ}];"))
+    assert "    x: float\n" in source
+
+
+@pytest.mark.parametrize("field_line, error", [
+    (f"optional double x = 2 [(sincero.field) = {{group: CONTRACT default_number: 1}}, {REQ}];",
+     "x: required contradicts a default or nullable"),
+    (f"optional double x = 2 [(sincero.field) = {{group: CONTRACT nullable: true}}, {REQ}];",
+     "x: required contradicts a default or nullable"),
+    (f"double x = 2 [(sincero.field) = {{group: CONTRACT}}, {REQ}];",
+     "x: a required field must be optional"),
+    (f"repeated int32 x = 2 [(sincero.field) = {{group: CONTRACT}}, {REQ}];",
+     "x: a repeated field is always a tuple"),
+])
+def test_generator_refuses_a_misused_required_rule(tmp_path, field_line, error):
+    with pytest.raises(GeneratorError, match=error):
+        render_validated(tmp_path, one_of_each_group(field_line))
+
+
+def test_range_rule_alone_does_not_make_a_field_required(tmp_path):
+    with pytest.raises(GeneratorError, match="x: optional, but neither a default nor nullable"):
+        render_validated(tmp_path, one_of_each_group(
+            "optional double x = 2 [(sincero.field) = {group: CONTRACT}, (buf.validate.field).double.gt = 0];"))
+
+
+def test_list_price_and_months_remaining_have_explicit_presence():
+    from google.protobuf import descriptor_pool
+    compile_proto(PROTO, [PROTO_DIR])
+    pool = descriptor_pool.Default()
+    required = pool.FindExtensionByName("buf.validate.field")
+    message = pool.FindMessageTypeByName("sincero.SimulationInput")
+    for name in ("list_price", "months_remaining"):
+        f = message.fields_by_name[name]
+        assert f.has_presence and f.GetOptions().Extensions[required].required, name

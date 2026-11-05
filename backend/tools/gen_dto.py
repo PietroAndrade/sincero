@@ -11,6 +11,7 @@ the `(sincero.field)` option (owning `Group`, default, nullable). This script tu
 group into a frozen dataclass named `<Group>Fields`, fields in .proto order, with:
 
     plain scalar                      ->  `name: type`                       (required)
+    optional scalar + (buf.validate.field).required  ->  `name: type`        (required)
     optional scalar + default_*       ->  `name: type = default`
     optional scalar + nullable        ->  `name: Optional[type] = None`
     repeated scalar                   ->  `name: tuple[type, ...] = field(default_factory=tuple)`,
@@ -39,6 +40,8 @@ from google.protobuf import descriptor_pb2, descriptor_pool
 
 BACKEND = Path(__file__).resolve().parent.parent
 PROTO_DIR = BACKEND / "proto"
+BUF_VALIDATE = PROTO_DIR / "buf_validate.binpb"   # descriptor set holding buf/validate/validate.proto
+BUF_VALIDATE_PROTO = "buf/validate/validate.proto"
 PROTO = "sincero/simulation_input.proto"
 MESSAGE = "SimulationInput"
 TARGET = BACKEND / "app" / "models" / "input_fields.py"
@@ -100,7 +103,8 @@ def compile_proto(proto: str, include: Sequence[Path]) -> descriptor_pb2.FileDes
     module_name = proto[: -len(".proto")].replace("/", ".") + "_pb2"
     with tempfile.TemporaryDirectory() as tmp:
         args = ["protoc", *[f"-I{p}" for p in include], f"-I{_google_include()}", f"--python_out={tmp}",
-                f"--descriptor_set_out={tmp}/set.pb", "--include_source_info", "--include_imports", proto]
+                f"--descriptor_set_in={BUF_VALIDATE}", f"--descriptor_set_out={tmp}/set.pb", "--include_source_info",
+                "--include_imports", BUF_VALIDATE_PROTO, proto]
         if protoc.main(args) != 0:
             raise GeneratorError(f"protoc failed on {proto}")
         sys.path.insert(0, tmp)
@@ -132,6 +136,10 @@ def read_groups(fds: descriptor_pb2.FileDescriptorSet, proto: str, message: str 
     """The groups of `message` in `proto`, each with its fields in .proto order; raises `GeneratorError`."""
     pool = descriptor_pool.Default()
     ext = pool.FindExtensionByName("sincero.field")
+    try:
+        required_ext = pool.FindExtensionByName("buf.validate.field")
+    except KeyError:                                     # pragma: no cover (compile_proto always registers it)
+        required_ext = None
     group_enum = pool.FindEnumTypeByName("sincero.Group")
     files = {f.name: f for f in fds.file}
     file = files[proto]
@@ -152,11 +160,17 @@ def read_groups(fds: descriptor_pb2.FileDescriptorSet, proto: str, message: str 
         py_type, default_kind = SCALARS[f.type]
         default_set = meta.WhichOneof("default")
         repeated = f.label == _FD.LABEL_REPEATED
+        required = (required_ext is not None and f.options.HasExtension(required_ext)
+                    and f.options.Extensions[required_ext].required)
 
         if repeated:
-            if default_set or meta.nullable:
+            if default_set or meta.nullable or required:
                 raise GeneratorError(f"{f.name}: a repeated field is always a tuple, empty by default")
             annotation, default = f"tuple[{py_type}, ...]", "field(default_factory=tuple)"
+        elif f.proto3_optional and required:
+            if default_set or meta.nullable:
+                raise GeneratorError(f"{f.name}: required contradicts a default or nullable")
+            annotation, default = py_type, None
         elif f.proto3_optional:
             if default_set and meta.nullable:
                 raise GeneratorError(f"{f.name}: either a default or nullable, not both")
@@ -167,6 +181,9 @@ def read_groups(fds: descriptor_pb2.FileDescriptorSet, proto: str, message: str 
             else:
                 raise GeneratorError(f"{f.name}: optional, but neither a default nor nullable — what does omitting it mean?")
         else:
+            if required:
+                raise GeneratorError(f"{f.name}: a required field must be optional (explicit presence); "
+                                     "see docs/decisions/required-fields-explicit-presence.md")
             if default_set or meta.nullable:
                 raise GeneratorError(f"{f.name}: a required field cannot have a default or be nullable; mark it optional")
             annotation, default = py_type, None

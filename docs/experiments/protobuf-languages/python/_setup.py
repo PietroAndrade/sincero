@@ -30,8 +30,9 @@ def compile_all():
     out = tempfile.mkdtemp(prefix="sincero-proto-")
     include = str(importlib.resources.files("grpc_tools") / "_proto")
     common = ["protoc", f"-I{BACKEND / 'proto'}", f"-I{PROTO}", f"-I{include}", f"--python_out={out}"]
-    assert protoc.main([*common, "sincero/simulation_input.proto"]) == 0
-    assert protoc.main([*common, f"--descriptor_set_in={PROTO / 'buf_validate.binpb'}",
+    bv = f"--descriptor_set_in={BACKEND / 'proto' / 'buf_validate.binpb'}"
+    assert protoc.main([*common, bv, "buf/validate/validate.proto", "sincero/simulation_input.proto"]) == 0
+    assert protoc.main([*common, bv,
                         "buf/validate/validate.proto", "sincero_rules.proto", "presence_variants.proto"]) == 0
     sys.path.insert(0, out)
     return (importlib.import_module("sincero.simulation_input_pb2"), importlib.import_module("sincero_rules_pb2"),
