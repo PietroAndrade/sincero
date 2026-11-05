@@ -1,7 +1,8 @@
 """
 The request side of the HTTP API: from a parsed JSON body to simulations that can run.
 
-This is the "shape layer" of `docs/api-contract.md`. It answers one question for each of
+This is the "shape layer" of `docs/api-contract.md` revision 6 (REST); revision 7 (Connect)
+replaces it with `buf.validate` rules and `connect_errors.py`. It answers one question for each of
 the four `POST` bodies — can this become a simulation? — in two passes:
 
     400  shape rules    the body is an object, carries only input fields, the required ones
