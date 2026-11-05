@@ -31,12 +31,43 @@ custos de cartório, as parcelas SAC/PRICE após as chaves, o gap de crédito no
 
 ## Executando a aplicação
 
-Requisito: Python 3.11+.
+Requisitos: Python 3.11+ e Node.js com npm (só para gerar o cliente TypeScript). Ainda não há Docker.
 
 ```bash
+git config core.hooksPath .githooks        # uma vez por clone: o pre-push roda `make test`
 cd backend
-pip install -r requirements-dev.txt        # runtime + behave + pytest
+python3 -m venv .venv
+source .venv/bin/activate                  # o Makefile chama `python3` do PATH
+pip install -r requirements-dev.txt        # runtime + behave + pytest + plugins do protoc
+npm ci --prefix ../frontend                # protoc-gen-es, na versão do lockfile
 ```
+
+### Verificar
+
+Em `backend/`, com o venv ativo:
+
+```bash
+make test           # pytest + todos os cenários do behave
+make proto-check    # o código gerado (Python e TypeScript) bate com os arquivos .proto
+```
+
+Os dois precisam sair com código 0 (`make test; echo $?`). O `pytest.ini` define `-q`, então a linha
+"N passed" não aparece: confie no código de saída, ou rode `python -m pytest -rA`. Dois módulos de
+teste são pulados quando faltam os geradores (`connectrpc` no Python, `frontend/node_modules` no
+TypeScript), o que deixa o `pytest` verde sem checar aquele lado; `python -m pytest -rs` lista o que
+foi pulado, e o `make proto-check` instala o plugin TypeScript sozinho e checa os dois lados.
+
+Uma peça de cada vez:
+
+| Para checar | Rode |
+|---|---|
+| O service e suas RPCs | `python -m pytest tests/test_service_definition.py` |
+| Toda rota REST e todo `code` de erro da revisão 6 tem sua RPC / código Connect | `python -m pytest tests/test_api_contract.py` |
+| Os erros viram `BadRequest` / `ErrorInfo` | `python -m pytest tests/test_connect_errors.py` |
+| O `make proto` não deixa diff | `make proto-check` |
+
+Se o `make proto-check` acusar diff num clone limpo, desconfie das versões dos plugins: os de Python
+estão fixos no `requirements-dev.txt`, e o de TypeScript no `frontend/package-lock.json`.
 
 ### Linha de comando (disponível agora)
 

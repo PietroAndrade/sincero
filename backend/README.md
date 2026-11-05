@@ -33,13 +33,21 @@ backend/
 │   ├── views/
 │   │   ├── json_view.py        # SimulationResult -> dict (the API / front-end contract)
 │   │   └── text_view.py        # SimulationResult -> terminal report
-│   └── controllers/
-│       ├── cli_controller.py   # argparse -> models -> views
-│       └── api_requests.py     # HTTP API shape layer: JSON body -> simulation inputs (400 rules, 422 pass),
-│                               #   for POST /api/simulations, /comparisons, …/what-if, …/cash-ladder
-│                               #   (Flask blueprint on top of it: milestone 5)
+│   ├── controllers/
+│   │   ├── cli_controller.py   # argparse -> models -> views
+│   │   ├── api_requests.py     # REST shape layer (contract revision 6): JSON body -> simulation inputs (400 rules, 422 pass);
+│   │   │                       #   retired when the Connect service lands — FieldSpec / UNITS / UPPER_BOUNDS still read from here
+│   │   ├── connect_errors.py   # Connect errors (contract revision 7): SimulationError -> invalid_argument + ErrorInfo,
+│   │   │                       #   buf.validate -> invalid_argument + BadRequest, unknown id -> not_found
+│   │   └── connect_app.py      # asgi_app() / wsgi_app(): the generated apps with unknown JSON keys refused
+│   └── gen/sincero/            # GENERATED from proto/ (make proto): *_pb.py messages (protobuf-py),
+│                               #   simulations_service_connect.py — the Connect service (connectrpc)
 ├── proto/sincero/simulation_input.proto   # the input fields — names, types, defaults, nullable, group — one flat message
+├── proto/sincero/simulation_result.proto  # the outputs: SimulationResult (simulation_to_dict) and Summary (summary_to_dict)
+├── proto/sincero/simulations_service.proto  # the API: service Simulations, its requests and responses; states the contract revision
+├── proto/google/rpc/error_details.proto     # vendored (googleapis): ErrorInfo, BadRequest — the error details
 ├── tools/gen_dto.py            # .proto -> app/models/input_fields.py (make dto; tests fail while they disagree)
+├── tools/gen_proto.py          # proto/ -> app/gen/ + ../frontend/src/gen/ (make proto / proto-check; tests/test_gen_proto.py)
 ├── cli.py                      # entry point
 ├── features/                   # Gherkin business scenarios (English, executed) + behave hooks and thin steps
 │   ├── environment.py
@@ -56,6 +64,8 @@ models through the JSON view (so the suite also pins the payload contract);
 
 ## Run
 
+First-time setup (venv, `npm ci`) and how to check that everything works: [Verify](../README.md#verify) in the root README.
+
 ```bash
 pip install -r requirements-dev.txt
 
@@ -71,6 +81,8 @@ make tags tag=@more-cash           # a slice
 make unit                          # pytest
 make report                        # Allure 3 report (npm install -g allure)
 make dto                           # regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto
+make proto                         # regenerate app/gen/ (Python) and ../frontend/src/gen/ (TypeScript) from proto/sincero/*.proto
+make proto-check                   # fail (with a diff) while the generated code and the .proto files disagree
 ```
 
 ## Adding or changing an input field
