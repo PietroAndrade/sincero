@@ -42,7 +42,7 @@ for f in pb.SimulationInput.DESCRIPTOR.fields:
     meta = f.GetOptions().Extensions[pb.field]                 # (sincero.field) — a typed FieldMeta
     kind = meta.WhichOneof("default")
     FIELDS.append(dict(name=f.name, field=f, group=pb.Group.Name(meta.group).lower(), nullable=meta.nullable,
-                       required=not f.has_presence and not f.is_repeated,       # a plain scalar
+                       required=not f.is_repeated and (not f.has_presence or not (kind or meta.nullable)),   # a plain scalar, or `optional` with no meaning for omission
                        default=[] if f.is_repeated else (getattr(meta, kind) if kind else None)))
 
 

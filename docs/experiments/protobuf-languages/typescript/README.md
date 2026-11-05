@@ -21,7 +21,7 @@ npm test               # 8 small tests pinning the findings (node --test)
 | `output.txt`, `test-output.txt` | the output of `npm run experiment` and `npm test`, as run |
 
 `npm run generate:rules` compiles `../proto/sincero_rules.proto` with `protoc` (on `PATH`) and
-`../proto/buf_validate.binpb` — a descriptor set of `buf/validate/validate.proto` extracted from
+`../../../../backend/proto/buf_validate.binpb` — a descriptor set of `buf/validate/validate.proto` extracted from
 the `@bufbuild/protovalidate` package (`buf.build`, which would normally provide it, is not reachable
 from the sandbox where this was run). With network access the normal way is a `buf.yaml`
 dependency on `buf.build/bufbuild/protovalidate`.

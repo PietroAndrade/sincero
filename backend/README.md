@@ -79,7 +79,7 @@ The fields of the input DTOs are declared once, in `proto/sincero/simulation_inp
 (one flat `SimulationInput` message; each field's `(sincero.field)` option names its owning
 group, its default and whether `null` is a value). Edit the `.proto`, run `make dto`, commit
 both: `tests/test_gen_dto.py` fails while `app/models/input_fields.py` and the `.proto`
-disagree. The CLI's `--help` and the API's `GET /api/fields` read the DTOs, so they follow.
+disagree. `make dto` also needs `proto/buf_validate.binpb` (see `proto/README.md`). The CLI's `--help` and the API's `GET /api/fields` read the DTOs, so they follow.
 What the `.proto` does not carry: the CLI flag and help text (`cli_controller.py`), the unit
 and the API ceiling (`api_requests.py`), the model's validation rules (`validators.py`).
 

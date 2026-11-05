@@ -14,10 +14,15 @@
 //   * `SimulationInput` is one FLAT message: the body of `POST /api/simulations` is one flat
 //     object (docs/api-contract.md), and the split into three DTOs is a model concern. The
 //     owner of a field is the `group` of its `(sincero.field)` option, never nesting.
-//   * A plain scalar is REQUIRED (it has no default; the dataclass field has none either).
-//   * An `optional` scalar may be omitted on the wire. It must say what omission means:
-//     a `default_*` (proto3 has no custom defaults, so the option carries it) or
-//     `nullable: true` — `null` is a value, "let the model size it" (`Optional[...] = None`).
+//   * A plain scalar becomes a required dataclass field; on the wire it can't be told apart from
+//     its zero value. Use it only when absent and zero mean the same thing (`name`).
+//   * A field that must be present is `optional` + `(buf.validate.field).required = true`: a
+//     required dataclass field (no default), and on the wire "absent" is refused apart from
+//     "invalid" (docs/decisions/required-fields-explicit-presence.md). Never `optional` without
+//     `required`, a default or `nullable`.
+//   * An `optional` field that may be omitted says what omission means: a `default_*` (proto3 has
+//     no custom defaults, so the option carries it) or `nullable: true` — `null` is a value,
+//     "let the model size it" (`Optional[...] = None`).
 //   * A `repeated` field defaults to empty and becomes a tuple.
 //   * Within a group, required fields come before optional ones (a dataclass rule).
 //   * Field names are unique across groups: a flat `field -> value` mapping (a JSON body,
@@ -29,6 +34,7 @@ syntax = "proto3";
 
 package sincero;
 
+import "buf/validate/validate.proto";
 import "google/protobuf/descriptor.proto";
 
 // ----- the vocabulary of this file ---------------------------------------------------
@@ -73,9 +79,13 @@ message SimulationInput {
   // simulation "CUSTOM" (docs/api-contract.md, open question "Where `name`'s default lives").
   string name = 1 [(sincero.field) = {group: CONTRACT}];
   // List price, R$.
-  double list_price = 2 [(sincero.field) = {group: CONTRACT}];
+  optional double list_price = 2 [(sincero.field) = {group: CONTRACT},
+                                  (buf.validate.field).required = true,
+                                  (buf.validate.field).double.gt = 0];
   // Months left until the building is delivered (time left, not the project's total duration).
-  int32 months_remaining = 3 [(sincero.field) = {group: CONTRACT}];
+  optional int32 months_remaining = 3 [(sincero.field) = {group: CONTRACT},
+                                       (buf.validate.field).required = true,
+                                       (buf.validate.field).int32 = {gte: 1, lte: 600}];
   // Down payment required by the developer, % of the list price.
   optional double down_payment_pct = 4 [(sincero.field) = {group: CONTRACT default_number: 20.0}];
   // FGTS used at signing, R$.

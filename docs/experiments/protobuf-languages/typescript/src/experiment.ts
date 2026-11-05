@@ -15,7 +15,12 @@ import { SimulationInputSchema, ComparisonRequestSchema, Group, field as fieldOp
 // ----- 1. the DTO: the generated type itself ---------------------------------------------------
 // `SimulationInput` is a plain object type (camelCase properties, `?:` on `optional` fields).
 // Nothing to generate on top of it; derived amounts are functions over the type.
-export const requiredDownPayment = (c: SimulationInput) => c.listPrice * (c.downPaymentPct ?? 20) / 100;
+// `listPrice` is `number | undefined` now (explicit presence): client code checks it, protovalidate refuses it server-side.
+const present = (n: number | undefined, name: string): number => {
+  if (n === undefined) throw new Error(`${name} is required`);
+  return n;
+};
+export const requiredDownPayment = (c: SimulationInput) => present(c.listPrice, "list_price") * (c.downPaymentPct ?? 20) / 100;
 export const upfront = (c: SimulationInput) => (c.fgtsUpfront ?? 0) + (c.cashUpfront ?? 0);
 export const remainingDownPayment = (c: SimulationInput) => Math.max(0, requiredDownPayment(c) - upfront(c));
 
@@ -28,7 +33,7 @@ export const FIELDS: FieldInfo[] = SimulationInputSchema.fields.map((f) => {
   const meta = getOption(f, fieldOption);                   // (sincero.field) — typed as FieldMeta
   const dflt = meta.default.case === undefined ? undefined : meta.default.value;
   return { name: f.name, group: meta.group as keyof typeof GROUP_NAMES, field: f,
-           required: f.presence !== 1 /* EXPLICIT */ && f.fieldKind !== "list",   // a plain scalar
+           required: f.fieldKind !== "list" && (f.presence !== 1 /* EXPLICIT */ || (meta.default.case === undefined && !meta.nullable)),   // a plain scalar, or `optional` with no meaning for omission
            nullable: meta.nullable, default: f.fieldKind === "list" ? [] : dflt };
 });
 

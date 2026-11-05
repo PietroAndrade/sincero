@@ -9,8 +9,9 @@ VENV=../../../../backend/.venv
 INCLUDE=$($VENV/bin/python -c "import importlib.resources as r; print(r.files('grpc_tools')/'_proto')")
 rm -rf server/gen client/gen && mkdir -p server/gen client/gen
 $VENV/bin/python -m grpc_tools.protoc -Iproto -I../../../../backend/proto -I"$INCLUDE" \
+  --descriptor_set_in=../../../../backend/proto/buf_validate.binpb \
   --plugin=protoc-gen-py=$VENV/bin/protoc-gen-py --py_out=server/gen \
   --plugin=protoc-gen-connectrpc=$VENV/bin/protoc-gen-connectrpc --connectrpc_out=server/gen \
   --plugin=protoc-gen-es=../typescript/node_modules/.bin/protoc-gen-es --es_out=client/gen --es_opt=target=ts,import_extension=js \
-  sincero/api.proto sincero/simulation_input.proto
+  buf/validate/validate.proto sincero/api.proto sincero/simulation_input.proto
 find server/gen client/gen -type f | xargs wc -l | sort -k2

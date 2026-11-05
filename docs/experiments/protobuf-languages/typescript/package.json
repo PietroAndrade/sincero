@@ -4,8 +4,8 @@
   "type": "module",
   "description": "Experiment: using backend/proto/sincero/simulation_input.proto from TypeScript",
   "scripts": {
-    "generate": "buf generate ../../../../backend/proto --template buf.gen.yaml && npm run generate:rules",
-    "generate:rules": "protoc -I../proto --descriptor_set_in=../proto/buf_validate.binpb --plugin=protoc-gen-es=node_modules/.bin/protoc-gen-es --es_out=src/gen \"--es_opt=target=ts,rewrite_imports=./buf/validate/*_pb.js:@bufbuild/protovalidate/gen\" sincero_rules.proto",
+    "generate": "protoc -I../../../../backend/proto --descriptor_set_in=../../../../backend/proto/buf_validate.binpb --plugin=protoc-gen-es=node_modules/.bin/protoc-gen-es --es_out=src/gen \"--es_opt=target=ts,rewrite_imports=./buf/validate/*_pb.js:@bufbuild/protovalidate/gen\" sincero/simulation_input.proto && npm run generate:rules",
+    "generate:rules": "protoc -I../proto --descriptor_set_in=../../../../backend/proto/buf_validate.binpb --plugin=protoc-gen-es=node_modules/.bin/protoc-gen-es --es_out=src/gen \"--es_opt=target=ts,rewrite_imports=./buf/validate/*_pb.js:@bufbuild/protovalidate/gen\" sincero_rules.proto",
     "build": "tsc -p tsconfig.json",
     "experiment": "npm run build && node dist/experiment.js && node dist/rules.js",
     "test": "npm run build && node --test dist/test.js"

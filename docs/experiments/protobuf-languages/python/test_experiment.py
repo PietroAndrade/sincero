@@ -40,7 +40,7 @@ def test_resolve_applies_the_defaults_and_reports_missing_required_fields():
     assert ok and (r.down_payment_pct, r.incc_rate_pa, r.name) == (20.0, 7.0, DEFAULT_NAME)
     assert not r.HasField("developer_installment")              # nullable stays absent
     assert parse({"list_price": 440000}) == (False, "ValueError: months_remaining is required")
-    assert parse({"list_price": 0, "months_remaining": 19})[1].endswith("list_price is required")   # implicit presence
+    assert parse({"list_price": 0, "months_remaining": 19})[0]  # explicit presence: a present 0 is not "missing" (the range rule refuses it)
 
 
 @pytest.mark.parametrize("body", [

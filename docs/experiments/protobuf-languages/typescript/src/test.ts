@@ -41,8 +41,8 @@ test("resolve applies the defaults and reports missing required fields", () => {
   assert.equal(r.name, DEFAULT_NAME);
   assert.equal(r.developerInstallment, undefined);         // nullable stays absent
   assert.throws(() => resolve(fromJson(SimulationInputSchema, { list_price: 440000 })), /months_remaining is required/);
-  assert.throws(() => resolve(fromJson(SimulationInputSchema, { list_price: 0, months_remaining: 19 })), /list_price is required/,
-    "implicit presence: 0 is indistinguishable from absent");
+  assert.doesNotThrow(() => resolve(fromJson(SimulationInputSchema, { list_price: 0, months_remaining: 19 })),
+    "explicit presence: a present 0 is not missing (the range rule refuses it)");
 });
 
 test("proto3 JSON mapping: what it refuses that the contract refuses", () => {
