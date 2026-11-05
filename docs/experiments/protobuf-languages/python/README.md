@@ -15,7 +15,7 @@ cd backend
 
 | File | What |
 |---|---|
-| `_setup.py` | compiles the three protos into a temporary directory with `grpcio-tools` and imports them (`buf/validate/validate.proto` comes from `../proto/buf_validate.binpb`, as for TypeScript) |
+| `_setup.py` | compiles the three protos into a temporary directory with `grpcio-tools` and imports them (`buf/validate/validate.proto` comes from `backend/proto/buf_validate.binpb`, as for TypeScript) |
 | `experiment.py` | the generated message used as the DTO (which the application does **not** do — see the first test for why); `FIELDS` (defaults, group, nullable from the option through the descriptor); `resolve()`; `split()`; the contract's `400` bodies through `json_format.ParseDict`, next to the application's hand-written shape layer on the same bodies |
 | `rules.py` | `../proto/sincero_rules.proto` enforced by `protovalidate` 2.1 — same file, same violations as TypeScript's `rules.ts`; `violations_of_body()` checks a JSON body, and `simulate_if_valid()` runs the rules before the model, calling the model only for a body they accept |
 | `presence.py` | `../proto/presence_variants.proto`: seven ways to declare a required field, each fed `{}`, `null`, `0` and a valid value — the evidence of [required-fields-explicit-presence](../../../decisions/required-fields-explicit-presence.md) |

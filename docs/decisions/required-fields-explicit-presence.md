@@ -2,9 +2,9 @@
 
 *Status: accepted, 2026-11-04. Applied to the experiment's rules,
 [`../experiments/protobuf-languages/proto/sincero_rules.proto`](../experiments/protobuf-languages/proto/sincero_rules.proto),
-and pinned by the Python and TypeScript runs of the experiment; **not yet** applied to
+and pinned by the Python and TypeScript runs of the experiment; applied to
 [`backend/proto/sincero/simulation_input.proto`](../../backend/proto/sincero/simulation_input.proto)
-(see [Not done yet](#not-done-yet)). Supersedes section 3 ("The 'absent' trap") of
+in task 5.3c (2026-11-04; see [Not done yet](#not-done-yet)). Supersedes section 3 ("The 'absent' trap") of
 [api-protocol-and-language](api-protocol-and-language.md), which chose plain scalars and a rule
 that rejects their zero value.*
 
@@ -154,7 +154,7 @@ every schema that uses them.
 Found while gathering the evidence. None of these changed in this decision, because the changes
 belong to files outside the experiment:
 
-1. **The Connect experiment's server does not enforce these rules.**
+1. **(Rules now on the real message; server change left to M5.) The Connect experiment's server does not enforce these rules.**
    [`connect_server.py`](../experiments/protobuf-languages/connect/server/connect_server.py)
    calls `protovalidate.validate(request)` on `sincero.SimulationInput`, which has no
    `buf.validate` rules, so `{}` and `{"list_price": 0, "months_remaining": 0}` pass it. The
@@ -165,7 +165,7 @@ belong to files outside the experiment:
    from `sincero.SimulationInput`'s (`list_price` 1 vs 2, `months_remaining` 2 vs 3), so the bytes
    of a valid `SimulationInput` read as an empty `ValidatedInput`. Only a JSON body can be checked
    against the copy. The lasting fix is to put the rules on `SimulationInput` itself.
-3. **`backend/proto/sincero/simulation_input.proto` still declares the required fields plain.**
+3. **Done in 5.3c: `backend/proto/sincero/simulation_input.proto` declared the required fields plain.**
    Applying D there was tried on copies, without changing the backend (2026-11-04):
    - **As it is, the generator cannot take it.** `tools/gen_dto.py`'s `compile_proto` passes only
      `-I` paths, so `import "buf/validate/validate.proto"` fails (`File not found`): the repository
