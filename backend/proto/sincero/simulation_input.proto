@@ -8,6 +8,8 @@
 //
 //     make dto          regenerate app/models/input_fields.py (needs grpcio-tools)
 //     make test         fails while the generated file and this .proto disagree
+//     make proto        regenerate ../frontend/src/gen/ (TypeScript) and app/gen/ (Python) from every sincero/*.proto
+//     make proto-check  fails while those and the .proto files disagree
 //
 // Conventions, enforced by the generator:
 //
@@ -70,8 +72,10 @@ extend google.protobuf.FieldOptions {
 
 // ----- the inputs ------------------------------------------------------------------------
 
-// Everything a simulation needs. The body of `POST /api/simulations`; the items of
-// `candidates` and `variations`; the `input` node of a simulation resource.
+// Everything a simulation needs. The request of `CreateSimulation` (the body of
+// `POST /api/simulations`) and the `input` of a `SimulationResult`. A part of it — a
+// candidate, a variation — is a `SimulationOverrides` (below). The other requests and the
+// results: simulations_service.proto and simulation_result.proto.
 message SimulationInput {
   // --- contract: what the buyer signs with the developer ---
 
@@ -123,22 +127,55 @@ message SimulationInput {
   optional int32 pro_soluto_months = 16 [(sincero.field) = {group: BANK_CREDIT default_integer: 12}];
 }
 
-// ----- the other request bodies (docs/api-contract.md) -------------------------------------
-// Not part of DTO generation; declared so the four POST bodies share one schema. Limits
-// (1..20 items, the API ceilings) and the rules a schema cannot state live in the contract.
+// ----- partial inputs --------------------------------------------------------------------
 
-// `POST /api/comparisons`: each candidate is `{**base, **candidate}`.
-message ComparisonRequest {
-  optional SimulationInput base = 1;
-  repeated SimulationInput candidates = 2;
+// Some fields of a `SimulationInput`: the `base` and `candidates` of a comparison, the
+// `variations` of a what-if, the `overrides` of a comparison row. A field that is set replaces
+// the value it is merged onto (the base's, the stored simulation's); a field that is not set
+// keeps it. The service simulates the merged input, never an overrides message alone.
+//
+// Same names, numbers and `buf.validate` rules as `SimulationInput`, minus `required`: a part
+// may leave out anything, so every field has explicit presence and is validated when set.
+// Proto3 cannot tell "set to empty / null" from "not set" on a repeated or `optional` field, so:
+//
+//   * `balloon_months` is a `BalloonMonths`: set with no months clears the balloons;
+//   * the nullable fields are a `NullableAmount`: set with no value is `null` ("let the model
+//     size it"), as in `SimulationInput`.
+//
+// tests/test_simulation_overrides.py fails while this message and `SimulationInput` disagree.
+message SimulationOverrides {
+  // --- contract ---
+  optional string name = 1;
+  optional double list_price = 2 [(buf.validate.field).double.gt = 0];
+  optional int32 months_remaining = 3 [(buf.validate.field).int32 = {gte: 1, lte: 600}];
+  optional double down_payment_pct = 4;
+  optional double fgts_upfront = 5;
+  optional double cash_upfront = 6;
+  NullableAmount developer_installment = 7;
+  BalloonMonths balloon_months = 8;
+
+  // --- market ---
+  optional double incc_rate_pa = 9;
+  optional double bank_rate_pa = 10;
+  optional int32 term_months = 11;
+  optional double itbi_pct = 12;
+  optional double registry_pct = 13;
+  optional double income_commitment_ratio = 14;
+
+  // --- bank credit ---
+  NullableAmount pre_approved_credit = 15;
+  optional int32 pro_soluto_months = 16;
 }
 
-// `POST /api/simulations/{id}/what-if`: each variation overrides the stored base.
-message WhatIfRequest {
-  repeated SimulationInput variations = 1;
+// The construction months with a balloon payment. Empty is a value: no balloons.
+// JSON: `{"months": [6, 12]}`; `{}` clears them.
+message BalloonMonths {
+  repeated int32 months = 1;
 }
 
-// `POST /api/simulations/{id}/cash-ladder`: strictly increasing amounts of cash at signing.
-message CashLadderRequest {
-  repeated double amounts = 1;
+// An amount, R$, or `null`: the model derives it. Unset `value` is `null`.
+// JSON: `{"value": 2500}`; `{}` is `null`. A JSON `null` in its place is "not set" (proto3),
+// i.e. "keep the value", not "set it to null".
+message NullableAmount {
+  optional double value = 1;
 }

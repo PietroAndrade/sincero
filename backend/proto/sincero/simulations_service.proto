@@ -1,0 +1,212 @@
+// SINCERO — the API: a Connect service (docs/decisions/api-protocol-and-language.md).
+//
+// Contract: docs/api-contract.md, revision 7. Change the two together: tests/test_api_contract.py
+// fails while the document and this file disagree (revision, RPCs, requests, responses, HTTP).
+//
+// Served at `/sincero.Simulations/<Rpc>` over Connect, gRPC and gRPC-Web. The reads are
+// `NO_SIDE_EFFECTS`, so a Connect client sends them as HTTP `GET`s (cacheable).
+//
+// The REST routes of docs/api-contract.md, and the RPC that replaces each one:
+//
+//     POST /api/simulations                      CreateSimulation
+//     GET  /api/simulations/{id}[/{path}]        GetSimulation (a `read_mask` replaces `{path}` and `?fields=`)
+//     GET  /api/comparisons?ids=…&relative_to=…  GetComparison
+//     POST /api/comparisons                      CreateComparison
+//     POST /api/simulations/{id}/what-if         CreateWhatIf
+//     POST /api/simulations/{id}/cash-ladder     CreateCashLadder
+//     GET  /api/fields                           ListFields
+//
+// Errors are Connect codes (app/controllers/connect_errors.py): `invalid_argument` for a
+// `buf.validate` rule (a `google.rpc.BadRequest` detail, one field violation per rule) and for a
+// rule of the model, a `SimulationError` (a `google.rpc.ErrorInfo` detail: reason
+// `invalid_input`, domain `sincero`, `metadata.index` of the failing item; the model's message
+// verbatim); `not_found` for an unknown id.
+//
+// Partial inputs. The base and candidates of a comparison and the variations of a what-if are
+// `SimulationOverrides`: every field optional, each validated when set. What only the merged
+// input can break is a rule of the request that merges it (a candidate without `list_price`
+// and no `base.list_price`); what only the model knows (FGTS + cash above the list price)
+// stays the model's, an `invalid_argument` with an `ErrorInfo`.
+syntax = "proto3";
+
+package sincero;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
+import "sincero/simulation_input.proto";
+import "sincero/simulation_result.proto";
+
+service Simulations {
+  // Simulates one input and stores it. The id is derived from the resolved input, so the same
+  // input always gets the same id.
+  rpc CreateSimulation(SimulationInput) returns (CreateSimulationResponse);
+  // One stored simulation: the whole result, or the part of it named by `read_mask`.
+  rpc GetSimulation(GetSimulationRequest) returns (Simulation) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Stored simulations side by side, optionally measured against one of them (a what-if).
+  rpc GetComparison(GetComparisonRequest) returns (Comparison) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Simulates and stores every candidate, all or nothing; answers with their comparison.
+  rpc CreateComparison(CreateComparisonRequest) returns (Comparison);
+  // Simulates and stores one variation of a stored simulation per item, all or nothing;
+  // answers with their comparison relative to that simulation.
+  rpc CreateWhatIf(CreateWhatIfRequest) returns (Comparison);
+  // The "more cash" what-if: the stored simulation with each amount as `cash_upfront`.
+  rpc CreateCashLadder(CreateCashLadderRequest) returns (Comparison);
+  // Every input field, in `SimulationInput` order: what a form needs to render it.
+  rpc ListFields(ListFieldsRequest) returns (ListFieldsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+// ----- simulations ---------------------------------------------------------------------------
+
+message CreateSimulationResponse {
+  string id = 1;
+}
+
+message GetSimulationRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // Paths of `Simulation` to return (`summary`, `result.mortgage`, `result.timeline.peak_month`);
+  // empty: all of it. `id` is always returned.
+  google.protobuf.FieldMask read_mask = 2;
+}
+
+// A stored simulation.
+message Simulation {
+  string id = 1;
+  Summary summary = 2;
+  SimulationResult result = 3;
+}
+
+// ----- comparisons (and what-ifs) ------------------------------------------------------------
+
+message GetComparisonRequest {
+  // The rows, in this order.
+  repeated string ids = 1 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20,
+    items: {string: {min_len: 1}}
+  }];
+  // The id of the reference: when set, every row carries `overrides` and `delta` against it
+  // and the comparison carries it as `relative_to`.
+  optional string relative_to = 2 [(buf.validate.field).string.min_len = 1];
+  // Paths of `Summary` to return in every row (`total_cost`, `extra_pct`); empty: all of them.
+  google.protobuf.FieldMask read_mask = 3;
+}
+
+// Each candidate is `{**base, **candidate}`: the fields a candidate sets replace the base's.
+// The required fields of `SimulationInput` must come from one or the other.
+// (Was `ComparisonRequest` in simulation_input.proto.)
+message CreateComparisonRequest {
+  option (buf.validate.message).cel = {
+    id: "candidates.list_price"
+    message: "every candidate needs list_price, its own or base's"
+    expression: "this.candidates.all(c, has(c.list_price) || has(this.base.list_price))"
+  };
+  option (buf.validate.message).cel = {
+    id: "candidates.months_remaining"
+    message: "every candidate needs months_remaining, its own or base's"
+    expression: "this.candidates.all(c, has(c.months_remaining) || has(this.base.months_remaining))"
+  };
+
+  // Fields shared by every candidate.
+  SimulationOverrides base = 1;
+  repeated SimulationOverrides candidates = 2 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20
+  }];
+}
+
+// Each variation overrides the stored simulation `id`: `base.with_overrides(**variation)`.
+// (Was `WhatIfRequest` in simulation_input.proto.)
+message CreateWhatIfRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // A variation sets at least one field: `{}` would be the stored simulation itself.
+  // (`has()` of every field rather than `this != sincero.SimulationOverrides{}`: a message
+  // literal needs a type registry in @bufbuild/protovalidate.)
+  repeated SimulationOverrides variations = 2 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20,
+    items: {
+      cel: {
+        id: "variation.not_empty"
+        message: "a variation must override at least one field"
+        expression: "has(this.name) || has(this.list_price) || has(this.months_remaining)"
+                    " || has(this.down_payment_pct) || has(this.fgts_upfront) || has(this.cash_upfront)"
+                    " || has(this.developer_installment) || has(this.balloon_months)"
+                    " || has(this.incc_rate_pa) || has(this.bank_rate_pa) || has(this.term_months)"
+                    " || has(this.itbi_pct) || has(this.registry_pct) || has(this.income_commitment_ratio)"
+                    " || has(this.pre_approved_credit) || has(this.pro_soluto_months)"
+      }
+    }
+  }];
+}
+
+// Cash at signing for each rung, R$. Strictly increasing (checked by the service).
+// (Was `CashLadderRequest` in simulation_input.proto.)
+message CreateCashLadderRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  repeated double amounts = 2 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20,
+    items: {double: {gte: 0, lte: 1e12}}
+  }];
+}
+
+// Simulations side by side. Rows are in the order asked; `relative_to` is set for a what-if, a
+// cash ladder and a `GetComparison` with `relative_to`.
+message Comparison {
+  repeated ComparisonRow rows = 1;
+  ComparisonRow relative_to = 2;
+}
+
+message ComparisonRow {
+  // The stored simulation: `GetSimulation` drills into it.
+  string id = 1;
+  Summary summary = 2;
+  // Only against a reference (unset in `relative_to` itself):
+  // the input fields in which this row's resolved input differs from the reference's, with
+  // this row's values (a no-op override is not a difference).
+  SimulationOverrides overrides = 3;
+  // This row minus the reference, for every number of `Summary` (`name` is empty).
+  Summary delta = 4;
+}
+
+// ----- the fields ----------------------------------------------------------------------------
+
+message ListFieldsRequest {}
+
+message ListFieldsResponse {
+  repeated FieldSpec fields = 1;
+}
+
+// One input field, as the API reads it from the DTOs (`api_requests.FieldSpec`).
+message FieldSpec {
+  string name = 1;
+  Group group = 2;
+  FieldType type = 3;
+  // `null` is accepted and means "let the model derive it".
+  bool nullable = 4;
+  // No default: the request must carry it.
+  bool required = 5;
+  // Value used when the field is omitted; unset for a required field and for `balloon_months`
+  // (empty). `name` defaults to "CUSTOM".
+  oneof default {
+    double default_number = 6;
+    int32 default_integer = 7;
+    string default_string = 8;
+  }
+  // "R$", "months", "% per year", …; unset for `name`.
+  optional string unit = 9;
+}
+
+enum FieldType {
+  FIELD_TYPE_UNSPECIFIED = 0;
+  FIELD_TYPE_STRING = 1;
+  FIELD_TYPE_NUMBER = 2;
+  FIELD_TYPE_INTEGER = 3;
+  FIELD_TYPE_INTEGER_LIST = 4;
+}
