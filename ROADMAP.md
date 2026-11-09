@@ -17,6 +17,13 @@ work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
 
 ## Decisions taken (open questions from the handoff)
 
+- **The engine runs in the browser, in TypeScript; Python and protobuf are retired**
+  ([decision](docs/decisions/engine-in-the-browser.md), accepted 2026-11-09; plan:
+  [docs/plan/typescript-port.md](docs/plan/typescript-port.md)). This supersedes the Connect decision
+  below for the web path, and milestones 5 (after 5.4) and 7 are dropped. The Python engine and the
+  `.proto` files are on the branch `legacy/python-engine` and the tag `python-engine-final`. The
+  milestone table and `tasks.md` are rewritten to the plan in P0.2.
+
 - **Order of work** (2026-11-04, [docs/plan/prd.md](docs/plan/prd.md)): the UI (M6) starts as soon as the API
   runs over Connect with the behave suite passing over the wire (5.14). Playwright (M8) comes right
   after it, against the local processes, and Docker (M7) after that. The tool is public, with the
