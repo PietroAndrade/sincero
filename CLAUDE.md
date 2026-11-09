@@ -4,58 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). The Python backend (milestones 1–4) exists, and the Connect service is defined (the `.proto` files and the generated code, milestone 5 up to task 5.4) but not served yet; the React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
+SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
 
-Everything lives under `backend/` (Python 3.11+); run all commands from there.
+**The repository is between engines.** The Python engine, the protobuf contract and the Connect service were retired on 2026-11-09 and live on the branch `legacy/python-engine` and the tag `python-engine-final`. The replacement, a TypeScript engine that runs in the browser, is planned in `docs/plan/typescript-port.md` and not started: there is no application code, no test runner and no build here yet. `ROADMAP.md` and `tasks.md` still describe the Python plan and are to be rewritten (P0.2).
 
-## Commands
+Read the retired code with `git show python-engine-final:backend/app/models/simulator.py`, or restore a part with `git checkout python-engine-final -- backend/proto`.
 
-```bash
-pip install -r requirements-dev.txt     # runtime + behave + pytest + allure-behave + protoc plugins
-npm ci --prefix ../frontend             # protoc-gen-es, for make proto (make proto-check runs it itself)
+## What is here
 
-make features                           # all behave scenarios
-make feature name=credit_gap            # one feature file (features/<name>.feature)
-make tags tag=@more-cash                # tag slice (@construction, @financing, @what-if, @validation…)
-make unit                               # pytest (tests/)
-make test                               # unit + features
-make report                             # Allure 3 report (needs: npm install -g allure)
-make dto                                # regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto
-make proto                              # regenerate app/gen/ (Python) and ../frontend/src/gen/ (TypeScript) from proto/sincero/*.proto
-make proto-check                        # fail with a diff while the generated code and the .proto files disagree
+- `backend/features/*.feature`: the business specification in Gherkin (English). `backend/features_pt_br/` is a Portuguese translation kept as documentation only; keep it in sync by hand when you change a scenario. The step definitions were Python/behave and were removed; they come back as cucumber-js in phase 2 of the plan. Step vocabulary: `backend/features/README.md`.
+- `docs/`: decisions, plans, the API contract (revision 7, superseded in practice), and the experiments. `docs/experiments/browser-engine` is the TypeScript port's proof of concept; its build reads `backend/app/`, which no longer exists on this branch, so it only runs from the tag.
+- `.githooks/pre-push`: a no-op until `npm test` exists. Enable hooks once per clone with `git config core.hooksPath .githooks`.
+- `/finish-task` (`.claude/commands/finish-task.md`): test, push, PR, squash-merge on GitHub, then a new branch from `develop`. Its test step (`make test` in `backend/`) no longer applies.
 
-python -m pytest tests/test_models.py::test_name   # single pytest test
-python cli.py --price 440000 --months 19 --json    # CLI; --help lists every option
-```
-
-No linter is configured.
-
-## Architecture
-
-MVC with a strict dependency direction `controllers → views → models`.
-
-- `app/models/`: pure-Python domain, no I/O or serialization. `simulator.py` (`simulate(SimulationInput) -> SimulationResult`) composes the small models (`down_payment`, `mortgage`, `construction`, `closing_costs`, `amortization`, `credit_gap`, `total_cost`, `timeline`). `comparison.py` provides `compare()`, `what_if()`, `cash_ladder()`. Inputs: the fields are declared once in `proto/sincero/simulation_input.proto` and generated into `input_fields.py` by `tools/gen_dto.py` (`make dto`; `tests/test_gen_dto.py` fails while they disagree — never edit the generated file); `input_dto.py` holds the three frozen DTOs that subclass them (`ContractData` — also derives `required_down_payment`/`upfront`/`remaining_down_payment` —, `MarketData`, `BankCreditData`); `input_interface.py` the pure, methods-only ABC (`SimulationInputInterface`: `validate()`, `with_overrides()`); `inputs.py` the frozen dataclass `SimulationInput(contract, market, bank_credit)` with `from_dict`/`to_dict` for the flat JSON/CLI form; `validators.py` the small `Validator[DTO]`s grouped per DTO in `DEFAULT_POLICY`. Components receive only the DTO they need (`DownPaymentPlan(contract, …)`, `ClosingCosts(list_price, market)`, `CreditGap(bank_credit, …)`). See `docs/simulation-input-refactor.md`. Validation errors are `SimulationError` (`errors.py`).
-- `app/views/json_view.py`: `simulation_to_dict` / `input_from_dict` define the JSON payload, which is the contract for the future API and front-end. `text_view.py` renders the terminal report.
-- `app/controllers/cli_controller.py`: argparse → models → views. `cli.py` is the entry point. `api_requests.py` is the HTTP shape layer (JSON body → inputs, the `400`/`422` rules of revision 6 of `docs/api-contract.md`); the Connect service replaces it (decision: `docs/decisions/api-protocol-and-language.md`). Already there: `proto/sincero/*.proto` (`service Simulations`, the typed results; revision 7 of the contract), `app/gen/` (generated Python, never edited by hand), `connect_errors.py` (rules and model errors → Connect errors) and `connect_app.py` (the codecs). No server runs yet (5.6). `frontend/` holds only `package.json` and the generated TypeScript in `src/gen/` until milestone 6.
+## Rules that survive the port
 
 Domain rules that span several files (details in the root README table):
 - Month 0 is signing, months 1..N are construction, N is key handover, and bank installments start at N+1.
 - Annual rates become monthly by compounding, `(1+r)^(1/12)-1`, never by division.
 - Balloon amounts are **derived** from the remaining down payment and the installment; they are never an input.
 - Cash or FGTS at signing reduces the developer installment first. Only the excess reduces the financed balance.
-
-## Testing structure
-
-The business spec is Gherkin in `features/` (English, executed). `features_pt_br/` is a Portuguese translation kept as documentation only and is never run; keep it in sync by hand when you change a scenario.
-
-- Step definitions in `features/steps/` stay thin. Logic lives in `support/` (world, `metrics`, `money`, `gateway`), which has no behave imports and is unit-tested in `tests/test_support.py`.
-- Scenarios drive the models through `support/gateway.py::EngineGateway`, which goes via the JSON view. So the behave suite also pins the payload contract.
-- `features/environment.py` builds the gateway once and resets the `SimulationWorld` before every scenario. Scenarios must pass alone and in any order. It also registers the custom step types `{x:Money}`, `{x:Percent}` and `{x:Metric}`.
-- Step vocabulary and model assumptions: `backend/features/README.md`. Backend layout: `backend/README.md`.
-
-`docs/reference/` keeps the early prototype scripts (`simulate-sac.py`, the empty `simulate-ballon-in-the-midle.py`); they are not part of the application.
-
-## Standard commands
-
-- `/finish-task` (`.claude/commands/finish-task.md`): test, push, PR, squash-merge on GitHub, then a new branch from `develop`. "finish task" means this command.
-- Git hooks live in `.githooks/`. Enable them once per clone with `git config core.hooksPath .githooks`. `pre-push` runs `make test` (needs `backend/.venv`).
+- Bit-exactness against CPython needs Node ≥ 24 (Node 22's `**` differs in the last bit); for users it is the business promise, every figure to the cent.
