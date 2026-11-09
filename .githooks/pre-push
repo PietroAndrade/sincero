@@ -1,26 +1,5 @@
 #!/usr/bin/env bash
-# Runs the full test suite before a push. Deleting a remote branch or tag skips it.
-set -euo pipefail
-
-root="$(git rev-parse --show-toplevel)"
-run_tests=0
-
-while read -r local_ref local_sha remote_ref remote_sha; do
-  if [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
-    run_tests=1
-  fi
-done
-
-[ "$run_tests" -eq 1 ] || exit 0
-
-venv="$root/backend/.venv/bin"
-if [ ! -x "$venv/python" ]; then
-  echo "pre-push: backend/.venv not found. Run: python3 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requirements-dev.txt" >&2
-  exit 1
-fi
-
-cd "$root/backend"
-PATH="$venv:$PATH" make test >/dev/null || {
-  echo "pre-push: make test failed. Run it from backend/ to see the output." >&2
-  exit 1
-}
+# The Python engine was retired (tag python-engine-final, branch legacy/python-engine) and the
+# TypeScript engine does not exist yet (docs/plan/typescript-port.md, phase 1), so there is no test
+# suite to run. Replace this with `npm test` when P1.1 lands.
+exit 0

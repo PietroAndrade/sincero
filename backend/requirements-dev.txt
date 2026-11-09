@@ -1,8 +1,0 @@
--r requirements.txt
-behave>=1.2.6
-allure-behave>=2.13
-pytest>=8.0
-grpcio-tools>=1.60        # protoc, for `make dto` and tests/test_gen_dto.py
-# `make proto` / `make proto-check`: pinned, the version is written into every generated file
-protoc-gen-py==0.7.0
-protoc-gen-connectrpc==0.13.0
