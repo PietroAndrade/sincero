@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SINCERO — the real cost of an off-plan apartment</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>SINCERO</h1>
+      <p>The real cost of an apartment <em>na planta</em>, before you sign.</p>
+    </div>
+    <nav id="engines" aria-label="Engine">
+      <span>Engine:</span>
+      <a href="?engine=ts" data-engine="ts">TypeScript</a>
+      <a href="?engine=pyodide" data-engine="pyodide">Pyodide</a>
+      <a href="?engine=brython" data-engine="brython">Brython</a>
+    </nav>
+  </header>
+
+  <p id="loading" class="loading">Loading the engine…</p>
+
+  <main id="app" hidden>
+    <form id="form" onsubmit="return false">
+      <h2>Your contract</h2>
+      <div id="presets" class="presets" aria-label="Reference properties"></div>
+      <label class="field"><span>Property</span><input id="f-name" type="text" value="RA"></label>
+      <div id="main-fields"></div>
+      <details>
+        <summary>More options</summary>
+        <div id="more-fields"></div>
+      </details>
+    </form>
+
+    <section id="results" aria-live="polite">
+      <div id="error" class="error" role="alert" hidden></div>
+      <article><h2>Real cost</h2><div id="headline"></div><div id="breakdown"></div></article>
+      <article><h2>Credit gap at delivery</h2><div id="gap"></div></article>
+      <article>
+        <h2>What more cash at signing changes</h2>
+        <label class="field inline"><span>Amounts (R$)</span><input id="ladder" type="text" value="0, 30000, 75000, 100000"></label>
+        <div id="ladder-table"></div>
+      </article>
+      <article><h2>Until delivery, month by month</h2><div id="chart" class="chart"></div></article>
+      <article><h2>Bank financing</h2><div id="financing"></div></article>
+    </section>
+  </main>
+
+  <footer>
+    <p>Computed <strong>in your browser</strong> by the <span id="engine-label"></span> — nothing is sent to a server.
+      Engine ready in <span id="loaded">…</span>; last computation <span id="compute">…</span>.</p>
+    <p class="muted">An estimate, not a bank quote. It assumes the INCC and bank rates above stay constant and TR = 0.</p>
+  </footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
