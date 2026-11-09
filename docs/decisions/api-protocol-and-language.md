@@ -1,6 +1,7 @@
 # Decision: the API is a protobuf service (Connect RPC); the backend stays Python, the front-end is TypeScript
 
-*Status: accepted, 2026-11-03. Evidence:
+*Status: accepted, 2026-11-03; **superseded for the web path on 2026-11-09** by
+[engine-in-the-browser](engine-in-the-browser.md) (no server, no API; kept for a future public API). Evidence:
 [`../protobuf-languages.md`](../protobuf-languages.md) (the language comparison) and
 [`../experiments/protobuf-languages/connect/`](../experiments/protobuf-languages/connect/) (a
 TypeScript client on a Python Connect server, run end to end, the real model behind it).
