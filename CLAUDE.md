@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). Only the Python backend (milestones 1–4) exists; the Connect API (a protobuf service served by `connectrpc`), React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
+SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). The Python backend (milestones 1–4) exists, and the Connect service is defined (the `.proto` files and the generated code, milestone 5 up to task 5.4) but not served yet; the React front-end and Docker are planned (see `ROADMAP.md`). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
 
 Everything lives under `backend/` (Python 3.11+); run all commands from there.
 
 ## Commands
 
 ```bash
-pip install -r requirements-dev.txt     # runtime + behave + pytest + allure-behave
+pip install -r requirements-dev.txt     # runtime + behave + pytest + allure-behave + protoc plugins
+npm ci --prefix ../frontend             # protoc-gen-es, for make proto (make proto-check runs it itself)
 
 make features                           # all behave scenarios
 make feature name=credit_gap            # one feature file (features/<name>.feature)
@@ -20,6 +21,8 @@ make unit                               # pytest (tests/)
 make test                               # unit + features
 make report                             # Allure 3 report (needs: npm install -g allure)
 make dto                                # regenerate app/models/input_fields.py from proto/sincero/simulation_input.proto
+make proto                              # regenerate app/gen/ (Python) and ../frontend/src/gen/ (TypeScript) from proto/sincero/*.proto
+make proto-check                        # fail with a diff while the generated code and the .proto files disagree
 
 python -m pytest tests/test_models.py::test_name   # single pytest test
 python cli.py --price 440000 --months 19 --json    # CLI; --help lists every option
@@ -33,7 +36,7 @@ MVC with a strict dependency direction `controllers → views → models`.
 
 - `app/models/`: pure-Python domain, no I/O or serialization. `simulator.py` (`simulate(SimulationInput) -> SimulationResult`) composes the small models (`down_payment`, `mortgage`, `construction`, `closing_costs`, `amortization`, `credit_gap`, `total_cost`, `timeline`). `comparison.py` provides `compare()`, `what_if()`, `cash_ladder()`. Inputs: the fields are declared once in `proto/sincero/simulation_input.proto` and generated into `input_fields.py` by `tools/gen_dto.py` (`make dto`; `tests/test_gen_dto.py` fails while they disagree — never edit the generated file); `input_dto.py` holds the three frozen DTOs that subclass them (`ContractData` — also derives `required_down_payment`/`upfront`/`remaining_down_payment` —, `MarketData`, `BankCreditData`); `input_interface.py` the pure, methods-only ABC (`SimulationInputInterface`: `validate()`, `with_overrides()`); `inputs.py` the frozen dataclass `SimulationInput(contract, market, bank_credit)` with `from_dict`/`to_dict` for the flat JSON/CLI form; `validators.py` the small `Validator[DTO]`s grouped per DTO in `DEFAULT_POLICY`. Components receive only the DTO they need (`DownPaymentPlan(contract, …)`, `ClosingCosts(list_price, market)`, `CreditGap(bank_credit, …)`). See `docs/simulation-input-refactor.md`. Validation errors are `SimulationError` (`errors.py`).
 - `app/views/json_view.py`: `simulation_to_dict` / `input_from_dict` define the JSON payload, which is the contract for the future API and front-end. `text_view.py` renders the terminal report.
-- `app/controllers/cli_controller.py`: argparse → models → views. `cli.py` is the entry point. `api_requests.py` is the HTTP shape layer (JSON body → inputs, the `400`/`422` rules of `docs/api-contract.md`); the Connect service replaces it in milestone 5 (decision: `docs/decisions/api-protocol-and-language.md`).
+- `app/controllers/cli_controller.py`: argparse → models → views. `cli.py` is the entry point. `api_requests.py` is the HTTP shape layer (JSON body → inputs, the `400`/`422` rules of revision 6 of `docs/api-contract.md`); the Connect service replaces it (decision: `docs/decisions/api-protocol-and-language.md`). Already there: `proto/sincero/*.proto` (`service Simulations`, the typed results; revision 7 of the contract), `app/gen/` (generated Python, never edited by hand), `connect_errors.py` (rules and model errors → Connect errors) and `connect_app.py` (the codecs). No server runs yet (5.6). `frontend/` holds only `package.json` and the generated TypeScript in `src/gen/` until milestone 6.
 
 Domain rules that span several files (details in the root README table):
 - Month 0 is signing, months 1..N are construction, N is key handover, and bank installments start at N+1.

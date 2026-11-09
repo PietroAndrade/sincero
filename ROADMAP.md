@@ -9,7 +9,7 @@ work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
 | [2](tasks.md#m2-python-engine-and-cli) | Workable Python engine + CLI | ✅ |
 | [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ |
 | [4](tasks.md#m4-mvc-backend) | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ |
-| [5](tasks.md#m5-connect-api-protobuf-service) | Connect API: a protobuf service (`service Simulations`) served by `connectrpc` from the Python backend, with the TypeScript client generated from the same `.proto`. The business semantics of [docs/api-contract.md](docs/api-contract.md) (simulations as resources, comparisons, what-ifs, cash ladder, fields) become RPCs in its revision 7; API-level behave features through a `ConnectGateway` | 📝 decided, contract to restate |
+| [5](tasks.md#m5-connect-api-protobuf-service) | Connect API: a protobuf service (`service Simulations`) served by `connectrpc` from the Python backend, with the TypeScript client generated from the same `.proto`. The business semantics of [docs/api-contract.md](docs/api-contract.md) (simulations as resources, comparisons, what-ifs, cash ladder, fields) become RPCs in its revision 7 (written); API-level behave features through a `ConnectGateway` | 🚧 service defined (5.4); rules and server next |
 | [6](tasks.md#m6-react-front-end) | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |
 | [8](tasks.md#m8-ui-acceptance-tests) | UI acceptance tests: behave + Playwright against the local processes (`make api` + Vite dev server); the compose service comes with M7 | ⬜ |
 | [7](tasks.md#m7-docker) | Docker: `docker-compose` with backend, frontend (nginx), behave test service | ⬜ |
@@ -52,8 +52,8 @@ work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
   generates the Python service and the browser client; Connect / gRPC-Web without a proxy;
   `buf.validate` rules replace the hand-written shape layer. The result is typed messages read with
   a `FieldMask`, and a failed model rule is `invalid_argument` with an `ErrorInfo` detail.
-  `api-contract.md` revision 6 (REST) is the source of the business semantics until revision 7
-  restates it as RPCs.
+  `api-contract.md` revision 7 (2026-11-05) restates the contract as RPCs; the `.proto` files are the
+  source and the document explains them.
 - **A required input field has explicit presence**: `optional` + `(buf.validate.field).required`,
   so an absent field and an invalid one are refused with different violations, before the model runs
   ([decision](docs/decisions/required-fields-explicit-presence.md), accepted 2026-11-04). Applying it

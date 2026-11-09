@@ -106,11 +106,13 @@ TypeScript; a deployment that wants one runtime; the model growing a front-end-o
 ## What changes in the contract
 
 The *figures* and the payload of a simulation do not change; the *surface* does. Revision 7 of
-`api-contract.md` records:
+`api-contract.md` (task 5.4, done 2026-11-05) records it. The service ended with seven RPCs, not
+the eight sketched in the first row: `GetSimulation` returns the result and its parts through a
+`read_mask`, so `GetNode` does not exist. The table is the plan; the contract is what was built:
 
 | Today (REST, revision 6) | With Connect |
 |---|---|
-| `POST /api/simulations`, `GET /api/simulations/{id}[/{path}]`, `GET`/`POST /api/comparisons`, `POST …/what-if`, `…/cash-ladder`, `GET /api/fields` | `service Simulations { CreateSimulation, GetSimulation, GetNode, GetComparison, CreateComparison, CreateWhatIf, CreateCashLadder, ListFields }` at `/sincero.Simulations/<Rpc>`; the reads are `NO_SIDE_EFFECTS` → HTTP `GET`, cacheable |
+| `POST /api/simulations`, `GET /api/simulations/{id}[/{path}]`, `GET`/`POST /api/comparisons`, `POST …/what-if`, `…/cash-ladder`, `GET /api/fields` | `service Simulations { CreateSimulation, GetSimulation, GetComparison, CreateComparison, CreateWhatIf, CreateCashLadder, ListFields }` (a first sketch had a `GetNode` too) at `/sincero.Simulations/<Rpc>`; the reads are `NO_SIDE_EFFECTS` → HTTP `GET`, cacheable |
 | `{path}` into the payload, `?fields=` | typed messages for the ten sections of the payload, one RPC returning the whole typed result, and a `google.protobuf.FieldMask` for the projection (question 1) |
 | Shape rules 2–7, `400` with `code`/`field`/`index` | the proto3 JSON mapping (strings for numbers accepted; `null` = unset; camelCase accepted; unknown keys refused by configuration) + `buf.validate` rules; violations are Connect `invalid_argument` errors with `google.rpc.BadRequest` field violations in `details` |
 | `422 invalid_input` with the model's message | `invalid_argument` with the same message and an `ErrorInfo` detail (question 2) |
