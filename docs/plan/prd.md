@@ -1,5 +1,10 @@
 # PRD: SINCERO, from engine to product (draft)
 
+> **Partly superseded 2026-11-09.** The product goals, personas and requirements stand. The
+> architecture, the Connect API, the phases and the priorities (the server, M5, M7) were replaced by
+> [typescript-port.md](typescript-port.md): the engine runs in the browser. See
+> [mvp.md](mvp.md) and [backlog.md](backlog.md) for the current scope.
+
 Status: **draft for review**, 2026-11-04. Sources: `README.md`, `ROADMAP.md`, `tasks.md`,
 `docs/decisions/`, and the ai-memory pages `decisions/api-contract-resource-model.md`,
 `_rules/git-workflow.md` and the 2026-11-02 to 11-04 session logs.
