@@ -1,0 +1,17 @@
+{
+  "name": "@sincero/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The SINCERO engine: the model and its JSON view, pure TypeScript, no DOM, no dependencies",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
+    "test": "vitest run",
+    "golden:update": "tsx golden/tools/update.ts"
+  }
+}
