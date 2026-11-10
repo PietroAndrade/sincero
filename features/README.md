@@ -4,6 +4,13 @@ These feature files are the **executable specification** of the engine. Every nu
 them was computed independently of the engine (plain formulas) before the engine was
 written, so they work as a regression oracle.
 
+They run on **cucumber-js** against `@sincero/engine` (`npm test` from the repository root runs
+them with everything else; `npm run features` runs only them, `npm run feature -- credit_gap.feature`
+one file). The step definitions are in
+`steps/`, the world, the money and metric parsing and the gateway to the engine in `support/`,
+and the support library's own tests in `test/`. They were ported from behave with the scenarios'
+text unchanged (plan item P2.1).
+
 Wording follows the house Gherkin style: business language only, one phrasing per
 concept, outcomes in scenario names, twins collapsed into Outlines.
 
@@ -32,7 +39,7 @@ concept, outcomes in scenario names, twins collapsed into Outlines.
 | Down payment | `list_price × pct`. Upfront (FGTS + cash) is deducted at signing; upfront above the down payment reduces the financed balance. Upfront above the list price is rejected; exactly the list price leaves a zero balance. |
 | Developer installments | Without a chosen installment: remaining down payment split in N equal nominal installments. With a chosen installment: `missing = remaining − installment × N` is split equally among the balloon months (the balloon is **derived**). Every payment in month k is multiplied by `(1 + incc_pm)^k`. An installment rounded to the cent (≤ half a cent × N) counts as covering the balance. |
 | Mortgage balance | `list_price − max(down_payment, upfront)`, corrected by `(1 + incc_pm)^N` at delivery ("hidden INCC debt"). |
-| Construction interest | The bank releases the balance evenly over the N months remaining: share k/N after month k. Interest in month k = `corrected_balance_k × (k/N) × bank_pm`. Never amortizes. Physical progress at signing is a [future feature](../../docs/future-features/physical-progress.md). |
+| Construction interest | The bank releases the balance evenly over the N months remaining: share k/N after month k. Interest in month k = `corrected_balance_k × (k/N) × bank_pm`. Never amortizes. Physical progress at signing is a [future feature](../docs/future-features/physical-progress.md). |
 | Closing costs | ITBI % + registry/deed % of the list price (defaults 2.0% + 0.5%). |
 | Bank financing | SAC and PRICE over `term_months` at `bank_rate_pa`. TR = 0; MIP/DFI insurance and admin fee out of scope. |
 | Minimum income | `first_installment / income_commitment_ratio` (default 30%). |
@@ -41,5 +48,18 @@ concept, outcomes in scenario names, twins collapsed into Outlines.
 ## Tags
 
 Behavioural tags (`@construction`, `@financing`, `@overview`, `@validation`, `@what-if`,
-`@more-cash`, `@incc`, `@balloon`, ...) select slices: `behave --tags=@more-cash`.
-Allure labels sit on their own tag line (`parentSuite` / `suite` / `subSuite`).
+`@more-cash`, `@incc`, `@balloon`, ...) select slices: `npm run features -- --tags @more-cash`.
+Allure labels sit on their own tag line (`parentSuite` / `suite` / `subSuite`); `npm run report`
+writes the Allure report grouped by them (`features/allure-report/`, `npx allure open allure-report`).
+
+## Step parameters
+
+| In a step | Matches | Becomes |
+|---|---|---|
+| `{money}` | `440,000.00`, `-3.10` (after `R$ `) | a number |
+| `{percent}` | `7.0`, `18.613` (before `%`) | a number |
+| `{metric}` | a phrase registered in `support/metrics.ts` ("credit gap", "SAC interest in month 3") | the figure's path in the payload |
+| `{int}`, `{string}` | cucumber's own: `19`, `"RA"` | |
+
+A new metric is one line in `support/metrics.ts`; a phrase that is not registered matches no step.
+Figures are compared to half a cent.
