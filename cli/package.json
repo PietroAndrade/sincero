@@ -1,0 +1,19 @@
+{
+  "name": "@sincero/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The SINCERO command line: npx sincero --price 440000 --months 19",
+  "license": "Apache-2.0",
+  "bin": {
+    "sincero": "./bin/sincero.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sincero/engine": "0.1.0",
+    "tsx": "4.23.15"
+  }
+}

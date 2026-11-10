@@ -1,0 +1,244 @@
+{
+ "about": "What the retired Python CLI printed: see from_python.py.",
+ "python": "3.14.7",
+ "cases": [
+  {
+   "note": "README: the five reference properties",
+   "argv": [],
+   "exit": 0,
+   "stdout": "=== REFERENCE PROPERTIES: 20% down payment, R$ 13,000 FGTS upfront ===\n\nName          Price Left       Dev/mo   Hidden INCC   Balance@deliv   Constr.int     SAC 1st    Min income\nSO    R$ 300.000,00    4 R$ 11.750,00   R$ 5.474,19   R$ 245.474,19  R$ 4.987,20 R$ 2.688,00   R$ 8.960,01\nF     R$ 396.000,00    8  R$ 8.275,00  R$ 14.616,68   R$ 331.416,68 R$ 12.029,66 R$ 3.629,09  R$ 12.096,98\nSV    R$ 233.000,00   17  R$ 1.976,47  R$ 18.750,66   R$ 205.150,66 R$ 14.646,21 R$ 2.246,45   R$ 7.488,17\nF4    R$ 320.400,00   19  R$ 2.688,42  R$ 28.983,31   R$ 285.303,31 R$ 22.548,22 R$ 3.124,14  R$ 10.413,80\nRA    R$ 440.000,00   19  R$ 3.947,37  R$ 39.802,30   R$ 391.802,30 R$ 30.965,10 R$ 4.290,33  R$ 14.301,10\n\n========================================================================\n🏠 SO  |  R$ 300.000,00  |  4 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 60.000,00       R$ 668,13     R$ 60.668,13\nMortgage balance          R$ 240.000,00     R$ 5.474,19    R$ 245.474,19\nConstruction interest           R$ 0,00     R$ 4.987,20      R$ 4.987,20\nClosing costs                   R$ 0,00     R$ 7.500,00      R$ 7.500,00\nTotal                     R$ 300.000,00    R$ 18.629,52    R$ 318.629,52\nExtra cost over list price: 6.21%\n\nDeveloper: R$ 11.750,00/month nominal  (month 1: R$ 11.816,44, last: R$ 12.018,01)\nConstruction interest: month 1 R$ 493,12 → last R$ 2.006,13  |  total R$ 4.987,20\nSAC:   1st R$ 2.688,00  last R$ 687,45  min income R$ 8.960,01\nPRICE: fixed R$ 2.119,28  min income R$ 7.064,26\nCredit gap at delivery: R$ 5.474,19 (pre-approved R$ 240.000,00 vs needed R$ 245.474,19) → pro-soluto R$ 456,18 x 12\nPeak month: 4 (R$ 14.024,14)  |  construction phase total R$ 65.655,33\n\n========================================================================\n🏠 F  |  R$ 396.000,00  |  8 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 79.200,00     R$ 1.706,78     R$ 80.906,78\nMortgage balance          R$ 316.800,00    R$ 14.616,68    R$ 331.416,68\nConstruction interest           R$ 0,00    R$ 12.029,66     R$ 12.029,66\nClosing costs                   R$ 0,00     R$ 9.900,00      R$ 9.900,00\nTotal                     R$ 396.000,00    R$ 38.253,12    R$ 434.253,12\nExtra cost over list price: 9.66%\n\nDeveloper: R$ 8.275,00/month nominal  (month 1: R$ 8.321,79, last: R$ 8.656,80)\nConstruction interest: month 1 R$ 325,46 → last R$ 2.708,49  |  total R$ 12.029,66\nSAC:   1st R$ 3.629,09  last R$ 928,13  min income R$ 12.096,98\nPRICE: fixed R$ 2.861,25  min income R$ 9.537,51\nCredit gap at delivery: R$ 14.616,68 (pre-approved R$ 316.800,00 vs needed R$ 331.416,68) → pro-soluto R$ 1.218,06 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 92.936,44\n\n========================================================================\n🏠 SV  |  R$ 233.000,00  |  17 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 46.600,00     R$ 1.762,48     R$ 48.362,48\nMortgage balance          R$ 186.400,00    R$ 18.750,66    R$ 205.150,66\nConstruction interest           R$ 0,00    R$ 14.646,21     R$ 14.646,21\nClosing costs                   R$ 0,00     R$ 5.825,00      R$ 5.825,00\nTotal                     R$ 233.000,00    R$ 40.984,36    R$ 273.984,36\nExtra cost over list price: 17.59%\n\nDeveloper: R$ 1.976,47/month nominal  (month 1: R$ 1.987,65, last: R$ 2.175,29)\nConstruction interest: month 1 R$ 90,12 → last R$ 1.676,59  |  total R$ 14.646,21\nSAC:   1st R$ 2.246,45  last R$ 574,52  min income R$ 7.488,17\nPRICE: fixed R$ 1.771,15  min income R$ 5.903,83\nCredit gap at delivery: R$ 18.750,66 (pre-approved R$ 186.400,00 vs needed R$ 205.150,66) → pro-soluto R$ 1.562,56 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 63.008,69\n\n========================================================================\n🏠 F4  |  R$ 320.400,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 64.080,00     R$ 2.988,51     R$ 67.068,51\nMortgage balance          R$ 256.320,00    R$ 28.983,31    R$ 285.303,31\nConstruction interest           R$ 0,00    R$ 22.548,22     R$ 22.548,22\nClosing costs                   R$ 0,00     R$ 8.010,00      R$ 8.010,00\nTotal                     R$ 320.400,00    R$ 62.530,05    R$ 382.930,05\nExtra cost over list price: 19.52%\n\nDeveloper: R$ 2.688,42/month nominal  (month 1: R$ 2.703,62, last: R$ 2.992,41)\nConstruction interest: month 1 R$ 110,87 → last R$ 2.331,63  |  total R$ 22.548,22\nSAC:   1st R$ 3.124,14  last R$ 798,99  min income R$ 10.413,80\nPRICE: fixed R$ 2.463,14  min income R$ 8.210,46\nCredit gap at delivery: R$ 28.983,31 (pre-approved R$ 256.320,00 vs needed R$ 285.303,31) → pro-soluto R$ 2.415,28 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 89.616,74\n\n========================================================================\n🏠 RA  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 4.387,99     R$ 92.387,99\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 86.155,39    R$ 526.155,39\nExtra cost over list price: 19.58%\n\nDeveloper: R$ 3.947,37/month nominal  (month 1: R$ 3.969,69, last: R$ 4.393,72)\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 14.301,10\nPRICE: fixed R$ 3.382,59  min income R$ 11.275,29\nCredit gap at delivery: R$ 39.802,30 (pre-approved R$ 352.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 3.316,86 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 123.353,09\n\n"
+  },
+  {
+   "note": "README: one property with a developer plan",
+   "argv": [
+    "--name",
+    "RA",
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--fgts",
+    "13000",
+    "--installment",
+    "2500",
+    "--balloon-month",
+    "6",
+    "--balloon-month",
+    "12"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 RA  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 4.214,67     R$ 92.214,67\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 85.982,07    R$ 525.982,07\nExtra cost over list price: 19.54%\n\nDeveloper: R$ 2.500,00/month nominal  (month 1: R$ 2.514,14, last: R$ 2.782,69)  +  2 balloon(s) of R$ 13.750,00 nominal in months 6, 12\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 14.301,10\nPRICE: fixed R$ 3.382,59  min income R$ 11.275,29\nCredit gap at delivery: R$ 39.802,30 (pre-approved R$ 352.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 3.316,86 x 12\nPeak month: 12 (R$ 19.331,55)  |  construction phase total R$ 123.179,77\n"
+  },
+  {
+   "note": "README: the cash ladder",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--fgts",
+    "13000",
+    "--cash-ladder",
+    "0,30000,75000,100000"
+   ],
+   "exit": 0,
+   "stdout": "  Cash upfront       Dev/mo   Hidden INCC   Balance@deliv     SAC 1st    Min income\n       R$ 0,00  R$ 3.947,37  R$ 39.802,30   R$ 391.802,30 R$ 4.290,33  R$ 14.301,10\n  R$ 30.000,00  R$ 2.368,42  R$ 39.802,30   R$ 391.802,30 R$ 4.290,33  R$ 14.301,10\n  R$ 75.000,00      R$ 0,00  R$ 39.802,30   R$ 391.802,30 R$ 4.290,33  R$ 14.301,10\n R$ 100.000,00      R$ 0,00  R$ 36.975,43   R$ 363.975,43 R$ 3.985,62  R$ 13.285,40\n"
+  },
+  {
+   "note": "README: closing costs, income ceiling, pro-soluto",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--itbi",
+    "3",
+    "--registry",
+    "1",
+    "--income-ratio",
+    "0.35",
+    "--pro-soluto-months",
+    "24"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 5.148,58     R$ 93.148,58\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 17.600,00     R$ 17.600,00\nTotal                     R$ 440.000,00    R$ 93.515,97    R$ 533.515,97\nExtra cost over list price: 21.25%\n\nDeveloper: R$ 4.631,58/month nominal  (month 1: R$ 4.657,77, last: R$ 5.155,29)\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 12.258,09\nPRICE: fixed R$ 3.382,59  min income R$ 9.664,54\nCredit gap at delivery: R$ 39.802,30 (pre-approved R$ 352.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 1.658,43 x 24\nPeak month: 19 (R$ 8.357,28)  |  construction phase total R$ 124.113,68\n"
+  },
+  {
+   "note": "README: the JSON payload",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--json"
+   ],
+   "exit": 0,
+   "json_digest": "5de133b51b9e6ad0753b1c2cbf8adee49ed162145c9e8172364c2ef918a18df0"
+  },
+  {
+   "note": "the cash ladder as JSON",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--fgts",
+    "13000",
+    "--cash-ladder",
+    "0,30000",
+    "--json"
+   ],
+   "exit": 0,
+   "json_digest": "aadc1d1204a3b83465d973238294ea399de5ae787e875682f626d6980119cee7"
+  },
+  {
+   "note": "every other flag",
+   "argv": [
+    "--name",
+    "Apto 12",
+    "--price",
+    "512345.67",
+    "--months",
+    "36",
+    "--down-payment-pct",
+    "25.5",
+    "--cash",
+    "15000.25",
+    "--incc",
+    "6.1",
+    "--bank-rate",
+    "11.49",
+    "--term",
+    "420",
+    "--pre-approved",
+    "350000"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 Apto 12  |  R$ 512.345,67  |  36 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment              R$ 130.648,15    R$ 11.220,28    R$ 141.868,42\nMortgage balance          R$ 381.697,52    R$ 74.198,17    R$ 455.895,70\nConstruction interest           R$ 0,00    R$ 72.560,47     R$ 72.560,47\nClosing costs                   R$ 0,00    R$ 12.808,64     R$ 12.808,64\nTotal                     R$ 512.345,67   R$ 170.787,56    R$ 683.133,23\nExtra cost over list price: 33.33%\n\nDeveloper: R$ 3.212,44/month nominal  (month 1: R$ 3.228,33, last: R$ 3.836,91)\nConstruction interest: month 1 R$ 97,01 → last R$ 4.150,90  |  total R$ 72.560,47\nSAC:   1st R$ 5.236,36  last R$ 1.095,35  min income R$ 17.454,54\nPRICE: fixed R$ 4.245,23  min income R$ 14.150,75\nCredit gap at delivery: R$ 105.895,70 (pre-approved R$ 350.000,00 vs needed R$ 455.895,70) → pro-soluto R$ 8.824,64 x 12\nPeak month: 0 (R$ 15.000,25)  |  construction phase total R$ 214.428,89\n"
+  },
+  {
+   "note": "--flag=value",
+   "argv": [
+    "--price=440000",
+    "--months=19",
+    "--fgts=13000"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 4.387,99     R$ 92.387,99\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 86.155,39    R$ 526.155,39\nExtra cost over list price: 19.58%\n\nDeveloper: R$ 3.947,37/month nominal  (month 1: R$ 3.969,69, last: R$ 4.393,72)\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 14.301,10\nPRICE: fixed R$ 3.382,59  min income R$ 11.275,29\nCredit gap at delivery: R$ 39.802,30 (pre-approved R$ 352.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 3.316,86 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 123.353,09\n"
+  },
+  {
+   "note": "a negative rate as a value",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--incc",
+    "-2"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00    R$ -1.465,45     R$ 86.534,55\nMortgage balance          R$ 352.000,00   R$ -11.081,46    R$ 340.918,54\nConstruction interest           R$ 0,00    R$ 28.145,16     R$ 28.145,16\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 26.598,24    R$ 466.598,24\nExtra cost over list price: 6.05%\n\nDeveloper: R$ 4.631,58/month nominal  (month 1: R$ 4.623,79, last: R$ 4.485,77)\nConstruction interest: month 1 R$ 151,15 → last R$ 2.786,15  |  total R$ 28.145,16\nSAC:   1st R$ 3.733,14  last R$ 954,74  min income R$ 12.443,80\nPRICE: fixed R$ 2.943,29  min income R$ 9.810,96\nCredit gap at delivery: R$ 0,00 (pre-approved R$ 352.000,00 vs needed R$ 340.918,54) → pro-soluto R$ 0,00 x 12\nPeak month: 19 (R$ 7.271,92)  |  construction phase total R$ 114.679,70\n"
+  },
+  {
+   "note": "half-cent ties in the report",
+   "argv": [
+    "--price",
+    "300000.125",
+    "--months",
+    "4",
+    "--fgts",
+    "0.375"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 300.000,12  |  4 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 60.000,03       R$ 852,93     R$ 60.852,95\nMortgage balance          R$ 240.000,10     R$ 5.474,19    R$ 245.474,29\nConstruction interest           R$ 0,00     R$ 4.987,21      R$ 4.987,21\nClosing costs                   R$ 0,00     R$ 7.500,00      R$ 7.500,00\nTotal                     R$ 300.000,12    R$ 18.814,33    R$ 318.814,45\nExtra cost over list price: 6.27%\n\nDeveloper: R$ 14.999,91/month nominal  (month 1: R$ 15.084,72, last: R$ 15.342,05)\nConstruction interest: month 1 R$ 493,12 → last R$ 2.006,13  |  total R$ 4.987,21\nSAC:   1st R$ 2.688,00  last R$ 687,45  min income R$ 8.960,01\nPRICE: fixed R$ 2.119,28  min income R$ 7.064,26\nCredit gap at delivery: R$ 5.474,19 (pre-approved R$ 240.000,10 vs needed R$ 245.474,29) → pro-soluto R$ 456,18 x 12\nPeak month: 4 (R$ 17.348,18)  |  construction phase total R$ 65.840,16\n"
+  },
+  {
+   "note": "a cash purchase",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--cash",
+    "440000"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment              R$ 440.000,00         R$ 0,00    R$ 440.000,00\nMortgage balance                R$ 0,00         R$ 0,00          R$ 0,00\nConstruction interest           R$ 0,00         R$ 0,00          R$ 0,00\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 11.000,00    R$ 451.000,00\nExtra cost over list price: 2.50%\n\nDeveloper: R$ 0,00/month nominal  (month 1: R$ 0,00, last: R$ 0,00)\nConstruction interest: month 1 R$ 0,00 → last R$ 0,00  |  total R$ 0,00\nSAC:   1st R$ 0,00  last R$ 0,00  min income R$ 0,00\nPRICE: fixed R$ 0,00  min income R$ 0,00\nCredit gap at delivery: R$ 0,00 (pre-approved R$ 0,00 vs needed R$ 0,00) → pro-soluto R$ 0,00 x 12\nPeak month: 0 (R$ 440.000,00)  |  construction phase total R$ 440.000,00\n"
+  },
+  {
+   "note": "a pre-approval above the need: no gap",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--pre-approved",
+    "500000"
+   ],
+   "exit": 0,
+   "stdout": "========================================================================\n🏠 CUSTOM  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 5.148,58     R$ 93.148,58\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 86.915,97    R$ 526.915,97\nExtra cost over list price: 19.75%\n\nDeveloper: R$ 4.631,58/month nominal  (month 1: R$ 4.657,77, last: R$ 5.155,29)\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 14.301,10\nPRICE: fixed R$ 3.382,59  min income R$ 11.275,29\nCredit gap at delivery: R$ 0,00 (pre-approved R$ 500.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 0,00 x 12\nPeak month: 19 (R$ 8.357,28)  |  construction phase total R$ 124.113,68\n"
+  },
+  {
+   "note": "--json ignored without --price: the reference run",
+   "argv": [
+    "--json"
+   ],
+   "exit": 0,
+   "stdout": "=== REFERENCE PROPERTIES: 20% down payment, R$ 13,000 FGTS upfront ===\n\nName          Price Left       Dev/mo   Hidden INCC   Balance@deliv   Constr.int     SAC 1st    Min income\nSO    R$ 300.000,00    4 R$ 11.750,00   R$ 5.474,19   R$ 245.474,19  R$ 4.987,20 R$ 2.688,00   R$ 8.960,01\nF     R$ 396.000,00    8  R$ 8.275,00  R$ 14.616,68   R$ 331.416,68 R$ 12.029,66 R$ 3.629,09  R$ 12.096,98\nSV    R$ 233.000,00   17  R$ 1.976,47  R$ 18.750,66   R$ 205.150,66 R$ 14.646,21 R$ 2.246,45   R$ 7.488,17\nF4    R$ 320.400,00   19  R$ 2.688,42  R$ 28.983,31   R$ 285.303,31 R$ 22.548,22 R$ 3.124,14  R$ 10.413,80\nRA    R$ 440.000,00   19  R$ 3.947,37  R$ 39.802,30   R$ 391.802,30 R$ 30.965,10 R$ 4.290,33  R$ 14.301,10\n\n========================================================================\n🏠 SO  |  R$ 300.000,00  |  4 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 60.000,00       R$ 668,13     R$ 60.668,13\nMortgage balance          R$ 240.000,00     R$ 5.474,19    R$ 245.474,19\nConstruction interest           R$ 0,00     R$ 4.987,20      R$ 4.987,20\nClosing costs                   R$ 0,00     R$ 7.500,00      R$ 7.500,00\nTotal                     R$ 300.000,00    R$ 18.629,52    R$ 318.629,52\nExtra cost over list price: 6.21%\n\nDeveloper: R$ 11.750,00/month nominal  (month 1: R$ 11.816,44, last: R$ 12.018,01)\nConstruction interest: month 1 R$ 493,12 → last R$ 2.006,13  |  total R$ 4.987,20\nSAC:   1st R$ 2.688,00  last R$ 687,45  min income R$ 8.960,01\nPRICE: fixed R$ 2.119,28  min income R$ 7.064,26\nCredit gap at delivery: R$ 5.474,19 (pre-approved R$ 240.000,00 vs needed R$ 245.474,19) → pro-soluto R$ 456,18 x 12\nPeak month: 4 (R$ 14.024,14)  |  construction phase total R$ 65.655,33\n\n========================================================================\n🏠 F  |  R$ 396.000,00  |  8 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 79.200,00     R$ 1.706,78     R$ 80.906,78\nMortgage balance          R$ 316.800,00    R$ 14.616,68    R$ 331.416,68\nConstruction interest           R$ 0,00    R$ 12.029,66     R$ 12.029,66\nClosing costs                   R$ 0,00     R$ 9.900,00      R$ 9.900,00\nTotal                     R$ 396.000,00    R$ 38.253,12    R$ 434.253,12\nExtra cost over list price: 9.66%\n\nDeveloper: R$ 8.275,00/month nominal  (month 1: R$ 8.321,79, last: R$ 8.656,80)\nConstruction interest: month 1 R$ 325,46 → last R$ 2.708,49  |  total R$ 12.029,66\nSAC:   1st R$ 3.629,09  last R$ 928,13  min income R$ 12.096,98\nPRICE: fixed R$ 2.861,25  min income R$ 9.537,51\nCredit gap at delivery: R$ 14.616,68 (pre-approved R$ 316.800,00 vs needed R$ 331.416,68) → pro-soluto R$ 1.218,06 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 92.936,44\n\n========================================================================\n🏠 SV  |  R$ 233.000,00  |  17 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 46.600,00     R$ 1.762,48     R$ 48.362,48\nMortgage balance          R$ 186.400,00    R$ 18.750,66    R$ 205.150,66\nConstruction interest           R$ 0,00    R$ 14.646,21     R$ 14.646,21\nClosing costs                   R$ 0,00     R$ 5.825,00      R$ 5.825,00\nTotal                     R$ 233.000,00    R$ 40.984,36    R$ 273.984,36\nExtra cost over list price: 17.59%\n\nDeveloper: R$ 1.976,47/month nominal  (month 1: R$ 1.987,65, last: R$ 2.175,29)\nConstruction interest: month 1 R$ 90,12 → last R$ 1.676,59  |  total R$ 14.646,21\nSAC:   1st R$ 2.246,45  last R$ 574,52  min income R$ 7.488,17\nPRICE: fixed R$ 1.771,15  min income R$ 5.903,83\nCredit gap at delivery: R$ 18.750,66 (pre-approved R$ 186.400,00 vs needed R$ 205.150,66) → pro-soluto R$ 1.562,56 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 63.008,69\n\n========================================================================\n🏠 F4  |  R$ 320.400,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 64.080,00     R$ 2.988,51     R$ 67.068,51\nMortgage balance          R$ 256.320,00    R$ 28.983,31    R$ 285.303,31\nConstruction interest           R$ 0,00    R$ 22.548,22     R$ 22.548,22\nClosing costs                   R$ 0,00     R$ 8.010,00      R$ 8.010,00\nTotal                     R$ 320.400,00    R$ 62.530,05    R$ 382.930,05\nExtra cost over list price: 19.52%\n\nDeveloper: R$ 2.688,42/month nominal  (month 1: R$ 2.703,62, last: R$ 2.992,41)\nConstruction interest: month 1 R$ 110,87 → last R$ 2.331,63  |  total R$ 22.548,22\nSAC:   1st R$ 3.124,14  last R$ 798,99  min income R$ 10.413,80\nPRICE: fixed R$ 2.463,14  min income R$ 8.210,46\nCredit gap at delivery: R$ 28.983,31 (pre-approved R$ 256.320,00 vs needed R$ 285.303,31) → pro-soluto R$ 2.415,28 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 89.616,74\n\n========================================================================\n🏠 RA  |  R$ 440.000,00  |  19 months remaining\n========================================================================\nComponent                          Base      Additional            Final\nDown payment               R$ 88.000,00     R$ 4.387,99     R$ 92.387,99\nMortgage balance          R$ 352.000,00    R$ 39.802,30    R$ 391.802,30\nConstruction interest           R$ 0,00    R$ 30.965,10     R$ 30.965,10\nClosing costs                   R$ 0,00    R$ 11.000,00     R$ 11.000,00\nTotal                     R$ 440.000,00    R$ 86.155,39    R$ 526.155,39\nExtra cost over list price: 19.58%\n\nDeveloper: R$ 3.947,37/month nominal  (month 1: R$ 3.969,69, last: R$ 4.393,72)\nConstruction interest: month 1 R$ 152,26 → last R$ 3.201,99  |  total R$ 30.965,10\nSAC:   1st R$ 4.290,33  last R$ 1.097,23  min income R$ 14.301,10\nPRICE: fixed R$ 3.382,59  min income R$ 11.275,29\nCredit gap at delivery: R$ 39.802,30 (pre-approved R$ 352.000,00 vs needed R$ 391.802,30) → pro-soluto R$ 3.316,86 x 12\nPeak month: 0 (R$ 13.000,00)  |  construction phase total R$ 123.353,09\n\n"
+  },
+  {
+   "note": "error: months",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "0"
+   ],
+   "exit": 2,
+   "stdout": "error: months remaining until delivery must be at least 1\n"
+  },
+  {
+   "note": "error: upfront above the list price",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--cash",
+    "500000"
+   ],
+   "exit": 2,
+   "stdout": "error: upfront payments of R$ 500,000.00 exceed the list price of R$ 440,000.00\n"
+  },
+  {
+   "note": "error: installments leave a balance",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--fgts",
+    "13000",
+    "--installment",
+    "2500"
+   ],
+   "exit": 2,
+   "stdout": "error: monthly installments of R$ 47,500.00 do not cover the down payment balance of R$ 75,000.00; R$ 27,500.00 is missing — add balloon months or raise the installment\n"
+  },
+  {
+   "note": "error: in the ladder, a rung's own rule",
+   "argv": [
+    "--price",
+    "440000",
+    "--months",
+    "19",
+    "--fgts",
+    "13000",
+    "--cash-ladder",
+    "0,430000"
+   ],
+   "exit": 2,
+   "stdout": "error: upfront payments of R$ 443,000.00 exceed the list price of R$ 440,000.00\n"
+  }
+ ]
+}
