@@ -1,5 +1,21 @@
-#!/usr/bin/env bash
-# The Python engine was retired (tag python-engine-final, branch legacy/python-engine) and the
-# TypeScript engine does not exist yet (docs/plan/typescript-port.md, phase 1), so there is no test
-# suite to run. Replace this with `npm test` when P1.1 lands.
-exit 0
+#!/bin/sh
+# Pre-push: nothing leaves this clone unless the whole suite passes (plan item P1.1).
+#
+#   npm test = typecheck + the engine's tests, including the golden master (bit-exact on Node >= 24)
+#
+# Git runs this hook because core.hooksPath is .githooks: `npm ci` sets it (the root package.json's
+# "prepare" script), or run `git config core.hooksPath .githooks` once. Skip it in an emergency
+# with `git push --no-verify`, and say so in the pull request.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -d node_modules ]; then
+  echo "pre-push: node_modules/ is missing: run \`npm ci\` first." >&2
+  exit 1
+fi
+
+echo "pre-push: npm test (node $(node --version))"
+if ! npm test --silent; then
+  echo "pre-push: npm test failed; nothing was pushed. (\`git push --no-verify\` skips this check.)" >&2
+  exit 1
+fi

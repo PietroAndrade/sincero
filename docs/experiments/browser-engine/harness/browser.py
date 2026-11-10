@@ -15,10 +15,13 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from playwright.sync_api import Browser, Page, sync_playwright
+from playwright.sync_api import Error as PlaywrightError
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent                                    # docs/experiments/browser-engine
-BACKEND = ROOT.parents[2] / "backend"                 # the repository's backend/
+# The retired Python backend (features/steps, support/, app/): legacy/backend, or a worktree of the
+# tag `python-engine-final` named by SINCERO_PYTHON_BACKEND (docs/decisions/engine-in-the-browser.md).
+BACKEND = Path(os.environ.get("SINCERO_PYTHON_BACKEND", ROOT.parents[2] / "legacy" / "backend")).resolve()
 RESULTS = ROOT / "results"
 ENGINES = ("ts", "pyodide", "brython")
 
@@ -34,7 +37,15 @@ def browser() -> Iterator[tuple[Browser, str]]:
     try:
         with sync_playwright() as p:
             exe = os.environ.get("CHROME_PATH")
-            b = p.chromium.launch(**({"executable_path": exe} if exe else {}))
+            try:
+                b = p.chromium.launch(**({"executable_path": exe} if exe else {}))
+            except PlaywrightError as exc:
+                if "Executable doesn't exist" not in str(exc):
+                    raise
+                raise SystemExit(
+                    f"No Chromium for this Playwright ({exe or 'its own build'} is missing). Install it with\n"
+                    f"    {sys.executable} -m playwright install chromium\n"
+                    "or point CHROME_PATH at a Chromium executable.") from None
             try:
                 yield b, url
             finally:

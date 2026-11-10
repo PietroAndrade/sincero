@@ -1,7 +1,8 @@
 # SINCERO MVP: the public launch
 
-Status: draft, 2026-11-04. Builds on [prd.md](prd.md) and [roadmap.md](roadmap.md). Task
-numbers refer to [tasks.md](../../tasks.md); **new** marks work with no task yet.
+Status: rewritten 2026-11-09 to [typescript-port.md](typescript-port.md) (P0.2), after the
+[decision](../decisions/engine-in-the-browser.md) that the engine runs in the browser. Builds on
+[prd.md](prd.md) and [roadmap.md](roadmap.md). Items are named as in [backlog.md](backlog.md).
 
 ## Hypothesis
 
@@ -19,106 +20,104 @@ Anything that doesn't help answer it waits.
 
 | Criterion | Target | Measured by |
 |---|---|---|
-| Correct figures | RA shows 19.6% extra cost and a R$ 39,802.30 gap, in the browser and over the API | `@ui` scenarios (8.3) and the 54 scenarios over the wire (5.14) |
+| Correct figures | RA shows 19.6% extra cost and a R$ 39,802.30 gap, in the browser | Playwright (US-09) and the 54 scenarios through the engine (P2.1); the golden master (P1.3) against the Python engine's answers |
 | Time to first result | ≤ 2 min from opening the app, starting from a preset | Playwright timing on the main path |
-| Activation | ≥ 80% of sessions that open the form reach a result | Server-side counts (see Must have) |
-| Cash ladder use | ≥ 30% of sessions with a gap > 0 run a cash ladder | Server-side counts |
-| Feedback | At least 10 pieces of feedback in the first month | Feedback link |
-| Stability | No `internal` error on the main path; simulation ≤ 200 ms on the CLI | Logs; CLI timing |
+| Speed | First result ≤ 2 s on the Lighthouse phone profile; initial JavaScript ≤ 150 KB gzipped | The performance budget in CI (P4.2) |
+| Activation | ≥ 80% of sessions that open the form reach a result | Usage counts (US-10), if D2 chooses an analytics service |
+| Cash ladder use | ≥ 30% of sessions with a gap > 0 run a cash ladder | Usage counts (US-10) |
+| Feedback | At least 10 pieces of feedback in the first month | Feedback link (US-11) |
+| Stability | No uncaught error on the main path, in Chromium, Firefox and WebKit | Playwright (P5.1) |
 
-The 30% and 10-feedback targets are guesses to check after the first month, not commitments.
+The 30% and 10-feedback targets are guesses to check after the first month, not commitments. If D2
+chooses no analytics, the activation and ladder targets cannot be measured and drop out.
 
 ## Scope (MoSCoW)
 
 ### Must have: without these the launch has no value
 
-**Engine and API (M5)**
-- 5.3c presence rule; 5.4 service + revision 7; 5.5 rules in the `.proto`.
-- 5.6 server skeleton (error mapping, health endpoint); 5.7 store.
-- 5.8 create/get/result; 5.9 nodes and field list (the views read nodes, not the 180 KB payload).
-- 5.10 comparisons and 5.11 what-ifs: the cash ladder's response is a what-if, which is a comparison.
-- 5.12 cash ladder; 5.13 retire REST; 5.14 `ConnectGateway`; 5.17 CORS (public domain + localhost).
-- **new** request size limit and rate limiting per client.
+**The engine (E1)**
+- P1.1–P1.6 the `engine/` package: workspace, golden master, ported unit tests, structured errors,
+  cash-ladder rules.
+- P2.1 the 54 scenarios on cucumber-js; P3.1 the Node CLI; P3.2 READMEs; P3.3 the golden update
+  protocol.
 
-**Front-end (M6)**, in Portuguese and English (6.12 answered)
-- 6.1 scaffold; 6.2 generated client; 6.3 input form; 6.4 presets.
-- 6.5 cost breakdown: the real cost.
-- 6.8 credit gap panel: the gap and the pro-soluto installment.
-- 6.10 cash ladder view: how much cash closes the gap.
-- 6.11 loading, error and field-level validation states.
-- **new** disclaimer: one line under every result, both languages, with the assumptions it uses
+**The web app (E2)**, in Portuguese and English
+- 6.12 language decision; 6.1 scaffold; P4.1 engine integration.
+- US-01 language; US-02 the form; US-03 presets; US-04 real cost; US-06 credit gap; US-07 cash
+  ladder; US-08 errors.
+- US-05 and D1: a disclaimer under every result, both languages, with the assumptions it uses
   (INCC 7.0% a year, bank rate 10.26%, TR = 0). Wording still to approve (PRD §9).
+- P4.2 performance budget.
 
-**Proof (M8)**
-- 8.1–8.3 Playwright `@ui` scenarios: simulate, cash ladder, validation message, against `make api`
-  + Vite. Compare is in the scenario list of 8.3; it moves to Should with 6.9.
+**Proof (E3)**
+- 8.1, 8.2, US-09 Playwright on the main path; P5.1 the golden corpus in three browsers.
 
-**Ship (M7 + launch)**
-- 7.1–7.3 backend and frontend images and compose, single process.
-- **new** hosting and domain decision, and a deployed instance.
-- **new** server-side usage counts: simulations created, cash ladders run, refused requests. Counts
-  only, no inputs, nothing personal (LGPD). Needed to measure the success criteria.
-- **new** feedback link in the app (a form or an e-mail address).
+**Ship (E4)**
+- D2 static host and domain; P6.1 CI; US-13 the public address; US-11 feedback link and D3; the
+  release checklist.
 
 ### Should have: important, a workaround exists
 
 - 6.6 timeline stacked bars. Workaround: the breakdown already shows the construction interest total.
 - 6.7 SAC vs PRICE and minimum income. Workaround: SAC is the default and its figures are in the
   breakdown.
-- 6.9 comparison table across properties. Workaround: simulate each one in turn.
-- 5.15 service-level features (error codes, expiry, CORS headers); 5.16 service docs.
-- 7.4 behave as a compose service; 7.5 compose instructions in the READMEs.
-- **new** CI running unit, behave and `@ui` on every PR (the `pre-push` hook covers it until then).
+- 6.9 comparison table across properties, and its Playwright scenario. Workaround: simulate each one
+  in turn.
+- US-10 usage counts, if D2 chooses an analytics service. Without it the activation and ladder
+  targets are not measured.
 
 ### Could have: if time allows
 
-- 9.1 + 9.2 live INCC (BCB/SGS series, 7.0% fallback). First extension after launch.
-- Shareable link to a simulation (the id is already a content hash; it lives until its TTL).
-- 8.4 Playwright as a compose service with screenshots in Allure.
-- 3.3 Allure end to end; 3.4 PT/EN feature parity check; 4.3/4.4 cleanup.
+- P0.3 a preview of the proof of concept for 3–5 buyers, during phases 1 to 3.
+- 9.1 + 9.2 live INCC (BCB/SGS series, 7.0% fallback), once the browser-call question is answered.
+- A shareable link that encodes the input in the URL.
+- The Allure report for cucumber-js.
 
 ### Won't have this time
 
 - TR, MIP/DFI, admin fee (9.3–9.6); physical progress at signing (9.7–9.11); pro-soluto with
   interest (9.12–9.13); PDF/CSV export.
-- Accounts, saved simulations across restarts, more than one process.
-- Accessibility criteria (deferred 2026-11-04); public API docs for third parties.
+- Accounts, saved simulations, any server: the site is static and nothing leaves the device.
+- A public API for third parties. The same engine can run on Node behind Connect when it is wanted
+  ([how](typescript-port.md#a-public-api-later)).
+- Accessibility criteria (deferred 2026-11-04).
 
 ## What the MVP is not
 
-- **Not a prototype:** it is deployed, validated at the boundary, rate-limited and proven by
-  Playwright. A buyer can rely on it for an estimate.
-- **Not the full product:** three of the six planned views are in (breakdown, gap, cash ladder).
-  The other three wait for feedback.
+- **Not a prototype:** it is deployed, its figures are pinned by a golden master and 54 scenarios,
+  and Playwright proves the main path in three browsers. A buyer can rely on it for an estimate.
+- **Not the full product:** three of the six planned views are in (breakdown, gap, cash ladder). The
+  other three wait for feedback.
 
 ## Main path the MVP must support
 
-1. The buyer opens the app and picks Portuguese or English.
+1. The buyer opens the site and picks Portuguese or English.
 2. They pick a preset or enter price, months remaining, down payment %, FGTS and pre-approved credit.
 3. They see the real cost (list price + extra cost, with the breakdown) and the disclaimer.
 4. They see the gap: pre-approved vs needed, and the pro-soluto installment if there is a gap.
 5. They run a cash ladder and see which amount closes the gap.
-6. An invalid input is named next to its field; a server error shows a message, never a blank
-   screen.
+6. An invalid input is named next to its field, in the chosen language; if the engine cannot load,
+   a message says so, never a blank screen.
 
 ## Release readiness checklist
 
-- [ ] Every Must have item done and accepted against its definition of done in `tasks.md`.
-- [ ] `make test` passes; the 54 scenarios pass through `ConnectGateway`; `@ui` scenarios pass.
-- [ ] RA in the deployed app shows 19.6% and R$ 39,802.30, in both languages.
+- [ ] Every Must have item done and accepted against its "Done when" in the plan.
+- [ ] `npm test` passes: unit, golden master (on Node 24) and the 54 scenarios; the Playwright suite
+      passes in Chromium, Firefox and WebKit.
+- [ ] RA on the public site shows 19.6% and R$ 39,802.30, in both languages.
 - [ ] No open bug on the main path.
-- [ ] Simulation ≤ 200 ms on the CLI; rate limiting and request size limit tested.
+- [ ] The performance budget holds: initial JavaScript ≤ 150 KB gzipped, first result ≤ 2 s on the
+      phone profile.
 - [ ] Disclaimer wording approved and shown under every result.
-- [ ] Usage counts recorded, and the feedback link reaches the maintainer.
-- [ ] READMEs (EN and PT) describe how to run the stack and where the public instance is.
-- [ ] Rollback plan: the previous image tag redeploys with one command; the in-memory store means
-      no data migration.
+- [ ] Feedback link reaches the maintainer; usage counts recorded, or D2 chose none.
+- [ ] READMEs (EN and PT) describe how to run the tests and where the public site is.
+- [ ] Rollback plan: the previous build redeploys with one command; there is no data to migrate.
 - [ ] Release notes drafted.
 
 ## Decisions still needed before launch
 
-1. Disclaimer wording (PRD §9).
-2. Hosting provider and domain.
-3. Feedback channel: a form or an e-mail address.
+1. Disclaimer wording (PRD §9), D1.
+2. Static host, domain, and analytics or none, D2.
+3. Feedback channel: a form or an e-mail address, D3.
 4. Whether to record the success targets above (30% cash ladder use, 10 pieces of feedback) or set
    others.

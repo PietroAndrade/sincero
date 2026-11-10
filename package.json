@@ -1,0 +1,31 @@
+{
+  "name": "sincero",
+  "private": true,
+  "type": "module",
+  "description": "SINCERO: the real cost of an off-plan apartment, computed in the buyer's browser",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "engine",
+    "features",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run typecheck && npm run test --workspaces --if-present",
+    "golden:update": "npm run golden:update --workspace @sincero/engine --",
+    "features": "npm run features --workspace @sincero/features --",
+    "feature": "npm run feature --workspace @sincero/features --",
+    "report": "npm run report --workspace @sincero/features"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "13.3.0",
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

@@ -1,5 +1,9 @@
 # Sprint 1
 
+> **Superseded 2026-11-09.** This document belongs to the server plan (Connect API, Docker). The
+> plan is now [typescript-port.md](typescript-port.md); see [backlog.md](backlog.md) and
+> [mvp.md](mvp.md). Kept as history.
+
 Status: plan, 2026-11-04. Backlog: [backlog.md](backlog.md). Length: **3 days**. Team: one developer
 working with coding agents.
 

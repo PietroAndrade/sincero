@@ -1,0 +1,8 @@
+{
+  "//": "The tests and the golden tools may use Node (fs, crypto); the engine under src/ may not.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [".", "../src", "../golden/tools", "../vitest.config.ts"]
+}

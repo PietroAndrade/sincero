@@ -1,0 +1,8 @@
+{
+  "//": "The command line and its tests; Node types for the tests.",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

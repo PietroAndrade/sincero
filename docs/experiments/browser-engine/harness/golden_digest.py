@@ -5,7 +5,9 @@ big-endian doubles, -0.0 folded into 0.0). ~34 KB for 429 cases. harness/golden_
 the same digest over the TypeScript port in Node and compares.
 
     python harness/golden_digest.py          # writes /tmp/cases.json and /tmp/golden.json
-    npx esbuild engine-ts/index.ts --bundle --format=esm --outfile=/tmp/eng.mjs && node harness/golden_digest.mjs
+    npx esbuild ../../../engine/src/index.ts --bundle --format=esm --outfile=/tmp/eng.mjs && node harness/golden_digest.mjs
+
+Superseded by the engine package's golden master (engine/golden/, P1.3), which uses the same digest.
 """
 import hashlib, json, struct, sys
 sys.path.insert(0, "harness")

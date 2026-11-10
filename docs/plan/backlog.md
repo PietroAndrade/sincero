@@ -1,79 +1,88 @@
 # SINCERO MVP backlog
 
-Status: draft, 2026-11-04. The backlog for [mvp.md](mvp.md), ordered: work from the top. Task numbers
-refer to [tasks.md](../../tasks.md), whose definitions of done stay the acceptance test for enabler
-items; user stories below carry their own Given/When/Then criteria. **new** marks items with no task
-in `tasks.md` yet.
+Status: rewritten 2026-11-09 to [typescript-port.md](typescript-port.md) (P0.2). It replaces the
+server backlog of 2026-11-04: the Connect service, its store, rate limiting and Docker are gone
+([decision](../decisions/engine-in-the-browser.md)). The buyer stories stay, with their criteria,
+except what a server brought. Items are named by the plan's ids (**P1.1**…) or, for work that
+existed before, by the old task number (6.1, 8.1…). `tasks.md` is not tracked in this repository and
+still describes the retired plan; this file is the backlog.
 
 Points are relative (Fibonacci, 1 to 13). There is no velocity yet: measure it over the first five
 items of E1 and plan from there.
 
 RA, the reference case used in the criteria: R$ 440,000, 19 months remaining, 20% down payment,
-R$ 13,000 FGTS, defaults for everything else. Figures from
-`python cli.py --price 440000 --months 19 --fgts 13000`.
+R$ 13,000 FGTS, defaults for everything else. Figures come from the retired Python engine
+(`git show python-engine-final:backend/cli.py`, run from a worktree of the tag) until the Node CLI
+(P3.1) prints them.
 
 ## Ordered backlog
 
 | # | Item | Epic | Type | Pts | Depends on |
 |---|---|---|---|---|---|
-| 1 | 5.3c Presence rule on the real input | E1 | Enabler | 3 | — |
-| 2 | 5.4 `service Simulations` + contract revision 7 | E1 | Enabler | 5 | 1 |
-| 3 | 5.5 Model rules in the `.proto` | E1 | Enabler | 5 | 2 |
-| 4 | 5.6 Server skeleton and error mapping | E1 | Enabler | 5 | 2 |
-| 5 | 5.7 Simulation store | E1 | Enabler | 3 | — |
-| 6 | 5.8 Create, get and read a simulation | E1 | Enabler | 5 | 3, 4, 5 |
-| 7 | 5.9 Nodes and field list | E1 | Enabler | 5 | 6 |
-| 8 | 5.10 Comparisons | E1 | Enabler | 5 | 6 |
-| 9 | 5.11 What-ifs | E1 | Enabler | 5 | 8 |
-| 10 | 5.12 Cash ladder | E1 | Enabler | 3 | 9 |
-| 11 | 5.17 `DECISION` CORS origins: public domain + localhost | E3 | Decision | 1 | — |
-| 12 | 5.13 Retire the REST layer | E1 | Tech debt | 2 | 10 |
-| 13 | 5.14 `ConnectGateway`: the 54 scenarios over the wire | E1 | Enabler | 5 | 10 |
-| 14 | **new** US-12 Protect the service from abuse | E3 | Story | 3 | 4 |
-| 15 | 6.12 `DECISION` record the language decision | E2 | Decision | 1 | — |
-| 16 | **new** D1 `DECISION` disclaimer wording | E2 | Decision | 1 | — |
-| 17 | 6.1 Scaffold the front-end, with a translation file | E2 | Enabler | 3 | 15 |
-| 18 | 6.2 Generated API client and error wrapper | E2 | Enabler | 3 | 13, 17 |
-| 19 | US-01 Choose the language | E2 | Story | 2 | 17 |
-| 20 | US-02 Describe my contract | E2 | Story | 8 | 18 |
-| 21 | US-03 Start from a reference property | E2 | Story | 2 | 20 |
-| 22 | US-04 See the real cost | E2 | Story | 5 | 20 |
-| 23 | US-05 Know what the figures are | E2 | Story | 2 | 16, 22 |
-| 24 | US-06 See the credit gap | E2 | Story | 3 | 20 |
-| 25 | US-07 See what more cash changes | E2 | Story | 5 | 24 |
-| 26 | US-08 Understand what went wrong | E2 | Story | 3 | 20 |
-| 27 | 8.1 Playwright fixture | E4 | Enabler | 2 | 17 |
-| 28 | 8.2 `UiGateway` | E4 | Enabler | 3 | 27, 20 |
-| 29 | US-09 Prove the main path in a browser (8.3) | E4 | Story | 5 | 25, 26, 28 |
-| 30 | **new** D2 `DECISION` hosting provider and domain | E5 | Decision | 2 | — |
-| 31 | **new** D3 `DECISION` feedback channel | E5 | Decision | 1 | — |
-| 32 | 7.1–7.3 Images and compose, single process | E5 | Enabler | 5 | 13, 17 |
-| 33 | **new** US-10 Count usage without tracking people | E5 | Story | 3 | 6 |
-| 34 | **new** US-11 Send feedback | E5 | Story | 2 | 31, 17 |
-| 35 | **new** US-13 Reach SINCERO on its public address | E5 | Story | 5 | 30, 32, 14 |
-| 36 | **new** Release: readiness checklist and release notes | E5 | Task | 2 | all above |
+| 1 | P0.1 Decision record: the engine runs in the browser | E0 | Decision | 2 | — **done 2026-11-09** |
+| 2 | P0.2 Rewrite ROADMAP, mvp.md, backlog.md to the plan | E0 | Task | 1 | 1 — **this change** |
+| 3 | P1.1 Workspace skeleton: npm workspaces, Node 24, strict tsconfig, vitest, `npm test`, hook | E1 | Enabler | 2 | 2 — **done 2026-11-09** (the hook: `.githooks/pre-push` runs `npm test`) |
+| 4 | P1.2 Move `engine-ts` into `engine/src`; public API | E1 | Enabler | 2 | 3 — **done 2026-11-09**; accepted: `run_features.py --engine ts`, 54/54 in Chromium 155 |
+| 5 | P1.3 Golden master: corpus + the tag's digests, vitest check | E1 | Enabler | 3 | 4 — **done 2026-11-09** ([engine/golden](../../engine/golden/README.md)) |
+| 6 | P1.4 Port the model's unit tests (`test_models`, `test_validators`, `test_views`) | E1 | Enabler | 3 | 4 — **done 2026-11-09**: the input model rebuilt as in Python (DTOs, interface, validator classes), 24 + 55 + 6 cases |
+| 7 | P1.5 Structured errors: `code`, `field`, `params` | E1 | Enabler | 3 | 4 — **done 2026-11-09**: `code`, `fields` (a list: several rules involve two or three fields), `params`; `MESSAGES[code](params)` is the English text |
+| 8 | P1.6 Cash-ladder amount rules in the engine | E1 | Enabler | 2 | 4, 12 — **done 2026-11-09**: finite, ≥ 0, ≤ list price, increasing to the cent; 5 golden answers changed on purpose; the scenario waits for G2 ([draft](pending-scenarios.md)) |
+| 9 | P2.1 cucumber-js runs the `.feature` files; support and steps ported; `test_support` ported | E1 | Enabler | 5 | 5 — **done 2026-11-09**: `features/` workspace, 29 steps, 54/54 |
+| 10 | P3.1 CLI in Node, same flags as `cli.py`; `test_cli_controller` ported | E1 | Enabler | 3 | 4 — **done 2026-11-09**: `cli/`, `npx sincero`; the Python CLI's output recorded and replayed |
+| 11 | P3.2 READMEs (EN/PT) for Node; mark `api-contract.md` and the Connect decision superseded | E1 | Task | 3 | 9, 10 — **done 2026-11-09** (also the proto and API-shape decisions) |
+| 12 | P3.3 Golden update protocol: `npm run golden:update` | E1 | Task | 1 | 5 — **done 2026-11-09**, before item 8 (P1.6 changes golden answers) |
+| 13 | 6.12 `DECISION` record the language decision (PT + EN) | E2 | Decision | 1 | — |
+| 14 | D1 `DECISION` disclaimer wording | E2 | Decision | 1 | — |
+| 15 | 6.1 Scaffold `web/` (Vite + React), with a translation file | E2 | Enabler | 3 | 3, 13 |
+| 16 | P4.1 Engine integration: errors → field marks and PT/EN text from `code`/`params` | E2 | Enabler | 2 | 7, 15 |
+| 17 | US-01 Choose the language | E2 | Story | 2 | 15 |
+| 18 | US-02 Describe my contract | E2 | Story | 8 | 16 |
+| 19 | US-03 Start from a reference property | E2 | Story | 2 | 18 |
+| 20 | US-04 See the real cost | E2 | Story | 5 | 18 |
+| 21 | US-05 Know what the figures are | E2 | Story | 2 | 14, 20 |
+| 22 | US-06 See the credit gap | E2 | Story | 3 | 18 |
+| 23 | US-07 See what more cash changes | E2 | Story | 5 | 8, 22 |
+| 24 | US-08 Understand what went wrong | E2 | Story | 2 | 16, 18 |
+| 25 | P4.2 Performance budget in CI: JS ≤ 150 KB gzipped, first result ≤ 2 s on the phone profile | E2 | Enabler | 2 | 20 |
+| 26 | 8.1 Playwright fixture (`@playwright/test`) | E3 | Enabler | 2 | 15 |
+| 27 | 8.2 UI driver for the cucumber world | E3 | Enabler | 3 | 9, 18, 26 |
+| 28 | US-09 Prove the main path in a browser | E3 | Story | 5 | 23, 24, 27 |
+| 29 | P5.1 The golden corpus in Chromium, Firefox and WebKit, to the cent | E3 | Enabler | 2 | 5, 26 |
+| 30 | D2 `DECISION` static host and domain; analytics or none | E4 | Decision | 2 | — |
+| 31 | D3 `DECISION` feedback channel | E4 | Decision | 1 | — |
+| 32 | P6.1 CI pipeline: typecheck, vitest, golden, cucumber-js, Playwright, budget, build, previews | E4 | Enabler | 3 | 25, 28 |
+| 33 | US-10 Count usage without tracking people | E4 | Story | 3 | 30 |
+| 34 | US-11 Send feedback | E4 | Story | 2 | 31, 15 |
+| 35 | US-13 Reach SINCERO on its public address | E4 | Story | 3 | 30, 32 |
+| 36 | Release: readiness checklist and release notes | E4 | Task | 2 | all above |
 
-Must have total: **123 points**. Should and Could items are listed at the end, unordered until the
-MVP ships.
+Optional, any time after item 2: **P0.3** publish the proof of concept on a free static host as a
+preview for 3–5 buyers (1 pt).
 
-Decisions (11, 15, 16, 30, 31) are cheap and can be taken any time before the item that needs them.
-Taking them early removes waiting later.
+Plan total **97 points** against the 123 of the server backlog; P0.1 is done and P2.2 (CI running the
+features twice) no longer applies, because Python left first. Decisions (13, 14, 30, 31) are cheap and
+can be taken any time before the item that needs them.
 
 ## Epics
 
 | Epic | Goal | Items |
 |---|---|---|
-| **E1. API on the wire** | The engine is reachable over Connect, validated at the boundary, and the 54 scenarios pass through it | 1–10, 12, 13 |
-| **E2. Simulate in the browser** | A buyer gets the real cost, the gap and the cash ladder, in PT or EN | 15–26 |
-| **E3. Protect the public service** | The public instance stays up and refuses abuse | 11, 14 |
-| **E4. Prove the main path** | A browser test fails whenever the main path breaks | 27–29 |
-| **E5. Ship and learn** | The app is public, measured, and users can talk back | 30–36 |
+| **E0. Decide** | The direction is recorded and the plan documents agree with it | 1–2 |
+| **E1. The engine in TypeScript** | A package whose figures are the Python engine's to the bit, pinned by a golden master and by the 54 scenarios, with a CLI | 3–12 |
+| **E2. Simulate in the browser** | A buyer gets the real cost, the gap and the cash ladder, in PT or EN, with no server | 13–25 |
+| **E3. Prove the main path** | A browser test fails whenever the main path breaks, in three browsers | 26–29 |
+| **E4. Ship and learn** | The site is public, measured without tracking people, and users can talk back | 30–36 |
 
-## E1. API on the wire
+## E1. The engine in TypeScript
 
-Enabler items. Their acceptance test is the definition of done of the same task in `tasks.md`; it is
-not repeated here. The value they carry for the buyer is the gate to E2: the UI can only show what
-the service returns, and 5.14 proves the service returns what the engine computes.
+Enabler items. Their acceptance test is the "Done when" column of the plan's phases 1 to 3; it is not
+repeated here. The value they carry for the buyer is the gate to E2: the UI shows what the engine
+computes, and G1 and G2 prove that is what the Python engine computed.
+
+- **G1** (after item 8): golden 100% on Node 24; unit tests green; 54/54 through the package; a
+  planted naive `sum()` fails the golden test. **Passed 2026-11-09.**
+- **G2** (after item 9): 54/54 on cucumber-js; the `(k − 1)/N` mutant fails 8 scenarios there too.
+  **Passed 2026-11-09.**
 
 ## E2. Simulate in the browser
 
@@ -107,8 +116,8 @@ about my apartment and not a generic one.
   rate 10.26% a year, and both can be changed.
 - **AC5.** Given I submit RA, When the result arrives, Then the result appears without reloading the
   page and the form keeps my values.
-- **AC6.** Given the same input submitted twice, When the result arrives, Then it is the same
-  simulation (same figures, same id).
+- **AC6.** Given the same input entered twice, When the result is shown, Then the figures are the
+  same. (There are no simulation ids: nothing is stored.)
 
 Splits if it is too big: AC1–AC2 + AC5 first (the core fields), then AC3, then AC4 and "more options".
 
@@ -171,77 +180,58 @@ know how much cash makes a difference.
 - **AC3.** Given the rows, When cash only pays the developer, Then the view says so: cash reduces the
   financed balance only after the down payment is covered.
 - **AC4.** Given amounts that are unsorted, repeated or negative, When I run the ladder, Then the
-  offending amount is named and no row is shown.
+  offending amount is named and no row is shown. (The rule lives in the engine, P1.6.)
 - **AC5.** Given an amount above the list price, When I run the ladder, Then that amount is named as
   refused.
 
-### US-08 Understand what went wrong (3 pts)
+### US-08 Understand what went wrong (2 pts)
 
 As a buyer, I want to know what to fix when something fails, so that I'm never stuck on a blank
 screen.
 
 - **AC1.** Given a required field is empty, When I submit, Then the field is marked and says it is
-  required, and nothing is sent.
+  required.
 - **AC2.** Given FGTS plus cash above the list price, When I submit, Then the model's message is
-  shown in the current language and the form keeps my values.
-- **AC3.** Given the server is slow, When I submit, Then I see that the result is loading and cannot
-  submit twice.
-- **AC4.** Given the server fails or is unreachable, When I submit, Then I see a message and a way to
+  shown in the current language, built from the error's `code` and `params` (P1.5), and the form
+  keeps my values.
+- **AC3.** Given the engine fails to load, When the page opens, Then I see a message and a way to
   try again, never a blank screen.
-- **AC5.** Given I was refused for sending too many requests (US-12), When I see the message, Then it
-  says to wait and try again.
 
-## E3. Protect the public service
+The server cases of the old story (slow, unreachable, rate-limited) disappeared with the server.
 
-### US-12 Protect the service from abuse (3 pts) **new**
-
-As the maintainer, I want the public instance to refuse oversized and excessive requests, so that
-one client can't take it down for everyone.
-
-- **AC1.** Given a request body above the size limit, When it arrives, Then it is refused before it
-  is parsed, with `resource_exhausted` or `invalid_argument`.
-- **AC2.** Given a client above the rate limit, When it sends another request, Then it is refused
-  with `resource_exhausted` and a hint of when to retry.
-- **AC3.** Given a cash ladder or comparison, When it counts against the limit, Then it counts as one
-  request per simulation it creates.
-- **AC4.** Given the limits, When I deploy, Then both are set from environment variables with safe
-  defaults.
-- **AC5.** Given normal use of the main path, When a buyer simulates and runs a ladder, Then no limit
-  is hit.
-
-## E4. Prove the main path
+## E3. Prove the main path
 
 ### US-09 Prove the main path in a browser (5 pts)
 
 As the maintainer, I want the main path tested in a real browser, so that I know before a release
 that a buyer can still get a result.
 
-- **AC1.** Given `make api` and the Vite dev server running, When `behave --tags=@ui` runs, Then the
-  simulate, cash ladder and validation scenarios pass.
+- **AC1.** Given the built site served locally, When `npm run e2e` runs, Then the simulate, cash
+  ladder and validation scenarios pass.
 - **AC2.** Given RA through the UI, When the scenario reads the result, Then it sees 19.6% and
   R$ 39,802.30, the same figures as the engine.
-- **AC3.** Given a plain `make features`, When it runs, Then no browser starts.
+- **AC3.** Given a plain `npm test`, When it runs, Then no browser starts.
 - **AC4.** Given the main path from a preset, When the scenario measures it, Then the result is shown
   in under 2 minutes of scripted use (in practice, seconds).
 
-The compare scenario of 8.3 moves to Should with 6.9.
+The compare scenario moves to Should with 6.9.
 
-## E5. Ship and learn
+## E4. Ship and learn
 
-### US-10 Count usage without tracking people (3 pts) **new**
+### US-10 Count usage without tracking people (3 pts)
 
 As the maintainer, I want to count how the app is used, so that I can check the MVP's success
-criteria.
+criteria, without sending any input anywhere.
 
-- **AC1.** Given a simulation is created, a cash ladder runs or a request is refused, When it
-  happens, Then a counter for that event goes up.
+- **AC1.** Given a result is shown or a cash ladder runs, When it happens, Then a counter for that
+  event goes up, through the service chosen in D2, or the story is dropped if D2 chooses none.
 - **AC2.** Given the counters, When I read them, Then I get totals per day.
 - **AC3.** Given any counted event, When it is recorded, Then no input value, IP address or other
-  personal data is stored.
+  personal data is sent.
 - **AC4.** Given the counters, When I compute activation and cash-ladder use, Then the numbers in
   `mvp.md`'s success criteria can be derived from them.
 
-### US-11 Send feedback (2 pts) **new**
+### US-11 Send feedback (2 pts)
 
 As a buyer, I want to tell the maintainer what was wrong or missing, so that the next version fits
 my case.
@@ -252,7 +242,7 @@ my case.
 - **AC3.** Given I send feedback, When it is sent, Then my simulation inputs are not attached unless
   I add them myself.
 
-### US-13 Reach SINCERO on its public address (5 pts) **new**
+### US-13 Reach SINCERO on its public address (3 pts)
 
 As a buyer, I want to open SINCERO at a public address, so that I can use it without installing
 anything.
@@ -260,11 +250,8 @@ anything.
 - **AC1.** Given the domain chosen in D2, When I open it over HTTPS, Then the app loads.
 - **AC2.** Given the deployed app, When I simulate RA in either language, Then I see 19.6% and
   R$ 39,802.30.
-- **AC3.** Given a new image tag, When it is deployed, Then the previous tag can be redeployed with
+- **AC3.** Given a new build, When it is deployed, Then the previous build can be redeployed with
   one command.
-- **AC4.** Given the deployment, When the backend is checked, Then the health endpoint answers and
-  one worker process runs.
-- **AC5.** Given a browser on another origin, When it calls the API, Then CORS refuses it.
 
 ## Decisions
 
@@ -272,23 +259,30 @@ Each is done when the choice and its reason are recorded in `docs/decisions/`.
 
 | Id | Decision | Needed before |
 |---|---|---|
-| 5.17 | CORS origins: public domain + localhost (answered; record it) | US-13 |
 | 6.12 | Interface language: PT + EN (answered; record it) | 6.1 |
 | D1 | Disclaimer wording, both languages | US-05 |
-| D2 | Hosting provider and domain | US-13 |
+| D2 | Static host, domain, and analytics or none | US-10, US-13 |
 | D3 | Feedback channel: a form or an e-mail address | US-11 |
+
+## What left the backlog
+
+Dropped with the server, see the [decision](../decisions/engine-in-the-browser.md): 5.5–5.14 (rules in
+the `.proto`, server, store, RPCs, REST retirement, `ConnectGateway`), 5.17 and US-12 (CORS and abuse
+protection), 7.1–7.3 (images and compose). Replaced: 6.2 (generated API client) by P4.1. Done before
+the pivot and kept in history, with the tag: 5.3c and 5.4.
 
 ## After the MVP (not ordered)
 
-**Should:** 6.6 timeline, 6.7 SAC vs PRICE, 6.9 comparison table (with the compare `@ui` scenario),
-5.15 service-level features, 5.16 service docs, 7.4–7.5 compose behave service and instructions,
-CI on every PR.
+**Should:** 6.6 timeline, 6.7 SAC vs PRICE, 6.9 comparison table (with the compare Playwright
+scenario), the Allure report for cucumber-js (`allure-cucumberjs`).
 
-**Could:** 9.1–9.2 live INCC, shareable links, 8.4 Playwright in compose, 3.3, 3.4, 4.3, 4.4.
+**Could:** 9.1–9.2 live INCC (first check that the Banco Central's SGS API allows browser calls), a
+shareable link that encodes the input in the URL, 4.3/4.4 are void (they were Python housekeeping).
 
 ## Backlog health
 
-- Items 1–14 (E1, E3) are refined: each has a definition of done in `tasks.md`.
+- Items 3–12 (E1) are refined: each has a "Done when" in the plan.
 - E2 stories need refinement before 6.1 starts. Open points: the "more options" grouping in US-02,
   and whether US-07 suggests amounts or lets the buyer type them.
+- Until P1.1 there is no test suite on `develop`; phase 1 starts next.
 - Re-estimate after the first five items, once there is a velocity.

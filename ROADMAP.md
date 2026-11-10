@@ -1,19 +1,27 @@
 # Roadmap
 
-Each milestone number links to its task breakdown in [tasks.md](tasks.md). Rows are in the order of
-work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
+Rewritten 2026-11-09 to the [TypeScript port plan](docs/plan/typescript-port.md): the engine runs in
+the browser and there is no server ([decision](docs/decisions/engine-in-the-browser.md)). Items are
+in [docs/plan/backlog.md](docs/plan/backlog.md). Milestones 1 to 4 are history; the numbers 5 to 9 of
+the earlier plan are replaced by the phases below, and `tasks.md` (not tracked) still describes the
+retired plan.
 
-| # | Milestone | Status |
+| Milestone | Scope | Status |
 |---|---|---|
-| [1](tasks.md#m1-gherkin-feature-files) | Gherkin feature files describing the business scenarios (`backend/features/`) | ✅ |
-| [2](tasks.md#m2-python-engine-and-cli) | Workable Python engine + CLI | ✅ |
-| [3](tasks.md#m3-bdd-validation) | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ |
-| [4](tasks.md#m4-mvc-backend) | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ |
-| [5](tasks.md#m5-connect-api-protobuf-service) | Connect API: a protobuf service (`service Simulations`) served by `connectrpc` from the Python backend, with the TypeScript client generated from the same `.proto`. The business semantics of [docs/api-contract.md](docs/api-contract.md) (simulations as resources, comparisons, what-ifs, cash ladder, fields) become RPCs in its revision 7 (written); API-level behave features through a `ConnectGateway` | 🚧 service defined (5.4); rules and server next |
-| [6](tasks.md#m6-react-front-end) | React + TypeScript front-end (Vite) with Plotly: input form, cost breakdown, timeline stacked bars, SAC vs PRICE, comparison table, cash ladder | ⬜ |
-| [8](tasks.md#m8-ui-acceptance-tests) | UI acceptance tests: behave + Playwright against the local processes (`make api` + Vite dev server); the compose service comes with M7 | ⬜ |
-| [7](tasks.md#m7-docker) | Docker: `docker-compose` with backend, frontend (nginx), behave test service | ⬜ |
-| [9](tasks.md#m9-extensions) | Extensions: live INCC (FGV's index, republished by the Banco Central's SGS API) first, TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ |
+| 1 | Gherkin feature files describing the business scenarios (`features/`, moved from `backend/features/`) | ✅ |
+| 2 | Python engine + CLI | ✅ retired, on `legacy/python-engine` and the tag `python-engine-final` |
+| 3 | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ retired with Python; the `.feature` files stay |
+| 4 | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ retired with Python |
+| 5 | Connect API (task 5.4 reached: `service Simulations`, generated code) | ⛔ dropped after 5.4: no server ([decision](docs/decisions/engine-in-the-browser.md)) |
+| P0 | Decide: the decision record (P0.1), plan documents rewritten (P0.2), optional preview (P0.3) | 🚧 P0.1, P0.2 done; P0.3 optional |
+| P1 | The engine package `engine/`: workspace, golden master from the tag, unit tests, structured errors, cash-ladder rules → **G1** | ✅ P1.1–P1.6 done; **G1 passed 2026-11-09**: golden master 456/456 on Node 24 (bit-identical to Python except the 5 answers P1.6 changed on purpose), unit tests green, planted mutants fail, and 54/54 scenarios through the package in Chromium 155 (`run_features.py --engine ts`) |
+| P2 | The `.feature` files on cucumber-js → **G2** | ✅ **G2 passed 2026-11-09**: 54/54 scenarios (399 steps) on cucumber-js against `@sincero/engine`, the text unchanged; the `(k − 1)/N` mutant fails 8 scenarios, as under behave; `test_support` ported (19 cases); Allure report kept (`npm run report`) |
+| P3 | CLI in Node, READMEs for Node, golden update protocol | ✅ P3.1 `npx sincero`, the same flags and the same text as `cli.py` (17 recorded outputs of the Python CLI replayed, byte for byte); P3.2 READMEs (EN/PT) for Node, the API contract and the retired stack's decisions marked superseded; P3.3 `npm run golden:update` |
+| P4 | Web app (Vite + React, PT + EN) → **G3**: RA in the browser shows 19.6% and R$ 39,802.30 | ⬜ |
+| P5 | Playwright on the main path; the golden corpus in Chromium, Firefox and WebKit | ⬜ |
+| P6 | Ship: static host, CI, usage counts or none, feedback, public address | ⬜ |
+| 9 | Extensions: live INCC (FGV's index, republished by the Banco Central's SGS API) first, TR on the bank phase, MIP/DFI insurance + admin fee, physical progress at signing (`docs/future-features/`), pro-soluto with interest, PDF/CSV export | ⬜ after the launch |
+| 7 | Docker | ⛔ dropped: a static site needs no containers |
 
 ## Decisions taken (open questions from the handoff)
 
@@ -22,7 +30,7 @@ work; the numbers are kept as stable identifiers, which is why 8 comes before 7.
   [docs/plan/typescript-port.md](docs/plan/typescript-port.md)). This supersedes the Connect decision
   below for the web path, and milestones 5 (after 5.4) and 7 are dropped. The Python engine and the
   `.proto` files are on the branch `legacy/python-engine` and the tag `python-engine-final`. The
-  milestone table and `tasks.md` are rewritten to the plan in P0.2.
+  milestone table and the plan documents were rewritten to it in P0.2 (2026-11-09).
 
 - **Order of work** (2026-11-04, [docs/plan/prd.md](docs/plan/prd.md)): the UI (M6) starts as soon as the API
   runs over Connect with the behave suite passing over the wire (5.14). Playwright (M8) comes right

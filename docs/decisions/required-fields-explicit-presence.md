@@ -1,5 +1,10 @@
 # Decision: a required input field has explicit presence — `optional` + `buf.validate` `required`
 
+> **Superseded on 2026-11-09** by [engine-in-the-browser](engine-in-the-browser.md): the `.proto` and
+> `buf.validate` are retired. In the engine, an absent required field and an invalid one are still
+> told apart: the first is an `InputShapeError` with code `missing_fields` naming the field, the second
+> a `SimulationError` with the rule's code (`engine/src/errors.ts`).
+
 *Status: accepted, 2026-11-04. Applied to the experiment's rules,
 [`../experiments/protobuf-languages/proto/sincero_rules.proto`](../experiments/protobuf-languages/proto/sincero_rules.proto),
 and pinned by the Python and TypeScript runs of the experiment; applied to

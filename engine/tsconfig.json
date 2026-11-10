@@ -1,0 +1,5 @@
+{
+  "//": "The engine itself: ES2022 only, no DOM and no Node types, so it cannot reach either by accident.",
+  "extends": "../tsconfig.base.json",
+  "include": ["src"]
+}
