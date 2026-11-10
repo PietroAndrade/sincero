@@ -3,7 +3,8 @@
 //   dist/index.html, style.css, app.js    the UI + the TypeScript engine (esbuild bundle)
 //   dist/pyodide/                         the Pyodide runtime (from node_modules/pyodide)
 //   dist/brython/                         the Brython runtime (from node_modules/brython)
-//   dist/py/                              the UNCHANGED Python engine, read from backend/app/ at build time:
+//   dist/py/                              the UNCHANGED Python engine, read at build time from the retired
+//                                         backend/app/ (legacy/backend/app, or $SINCERO_PYTHON_BACKEND/app):
 //                                         app/{__init__,models/*,views/*}.py + sincero_bridge.py, as files
 //                                         (Brython imports them one by one) and as engine.json (Pyodide)
 import { build } from "esbuild";
@@ -13,7 +14,9 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(here, "dist");
-const backendApp = path.resolve(here, "../../../backend/app");
+// The Python engine left develop (docs/decisions/engine-in-the-browser.md): read it from legacy/backend,
+// or from a worktree of the tag `python-engine-final` named by SINCERO_PYTHON_BACKEND.
+const backendApp = path.resolve(process.env.SINCERO_PYTHON_BACKEND ?? path.resolve(here, "../../../legacy/backend"), "app");
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
@@ -62,10 +65,10 @@ fs.writeFileSync(path.join(dist, "py/engine.json"), JSON.stringify(sources));
 // 4. sizes: how much of app.js is the engine port
 const inputs = result.metafile.outputs[path.relative(process.cwd(), path.join(dist, "app.js"))]?.inputs
   ?? Object.values(result.metafile.outputs)[0].inputs;
-const engineBytes = Object.entries(inputs).filter(([k]) => k.includes("engine-ts")).reduce((s, [, v]) => s + v.bytesInOutput, 0);
+const engineBytes = Object.entries(inputs).filter(([k]) => k.includes("engine/src")).reduce((s, [, v]) => s + v.bytesInOutput, 0);
 const sizes = {
   "app.js": fs.statSync(path.join(dist, "app.js")).size,
-  "app.js: engine-ts part": engineBytes,
+  "app.js: engine part": engineBytes,
   "py/engine.json": fs.statSync(path.join(dist, "py/engine.json")).size,
   "python engine files": Object.keys(sources).length,
 };

@@ -1,14 +1,14 @@
 /**
  * One interface, three ways to run the SINCERO engine inside the browser:
  *
- *   ts        the TypeScript port (engine-ts/), bundled into app.js
+ *   ts        the TypeScript engine (the package in engine/ at the repository root), bundled into app.js
  *   pyodide   the unchanged Python engine on CPython compiled to WebAssembly
  *   brython   the unchanged Python engine on Brython (Python translated to JavaScript at runtime)
  *
  * Every engine answers `callJson(kind, requestJson)` with the JSON string of a `Reply`, so the UI,
  * the benchmark and the behave gateway (harness/) treat them alike.
  */
-import { InputShapeError, SimulationError, cashLadderDict, compareDicts, simulateDict } from "../engine-ts/index.js";
+import { InputShapeError, SimulationError, cashLadderDict, compareDicts, simulateDict } from "../../../../engine/src/index.js";
 
 export type Kind = "simulate" | "compare" | "cash_ladder";
 

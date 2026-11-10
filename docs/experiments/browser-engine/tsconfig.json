@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["engine-ts", "web"]
+  "include": ["web"]
 }

@@ -4,6 +4,13 @@
 output: [`output.txt`](output.txt). Nothing here changes the application: the Python engine is read
 from `backend/app/` at build time and the behave suite from `backend/features/`, both unmodified.*
 
+> **Since 2026-11-09** (plan item P1.2): the port `engine-ts/` moved to the engine package
+> [`engine/src/`](../../../engine/) (`pyfloat.ts` is now `numerics.ts`), and `web/` imports it
+> from there. `backend/` left `develop`, so `build.mjs` and `harness/` read the retired engine from
+> `legacy/backend`, or from the directory named by `SINCERO_PYTHON_BACKEND` (a worktree of the tag
+> `python-engine-final`). The paths below are those of the run. `harness/golden_digest.*` became
+> the package's [golden master](../../../engine/golden/README.md).
+
 ## The question
 
 SINCERO should be usable by people who cannot run Python. A web page is the shortest path to them

@@ -5,7 +5,7 @@
  *
  * `window.sincero` is the hook harness/ uses to measure, diff and run behave through the page.
  */
-import { FIELDS } from "../engine-ts/index.js";
+import { FIELDS } from "../../../../engine/src/index.js";
 import { ENGINES, Engine, EngineName, Kind, Reply } from "./engines.js";
 
 // ----- engine + harness hook ------------------------------------------------------------------------
