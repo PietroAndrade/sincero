@@ -1,6 +1,7 @@
 # Decision: reject upfront payments above the list price
 
-*Status: accepted on 2026-11-01, implemented in `UpfrontPaymentsValidator`.*
+*Status: accepted on 2026-11-01, implemented in `UpfrontPaymentsValidator` (since 2026-11-09 in
+`engine/src/validators.ts`, code `upfront_above_list_price`).*
 
 ## Context
 

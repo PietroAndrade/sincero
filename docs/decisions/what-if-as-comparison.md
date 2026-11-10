@@ -1,5 +1,9 @@
 # Decision: a what-if is a comparison with a reference row, not an endpoint of its own
 
+> **Superseded for the API on 2026-11-09** by [engine-in-the-browser](engine-in-the-browser.md): there
+> are no endpoints. The idea stands in the engine: a what-if is the base and its variations, each
+> row's `delta` relative to the base (`whatIf`, `cashLadder` and `whatIfToDict` in `engine/src/`).
+
 *Status: accepted in revision 4 of [`docs/api-contract.md`](../api-contract.md) (milestone 5,
 not yet implemented). Revision 5 built the cash ladder on top of it.*
 

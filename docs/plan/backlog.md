@@ -21,16 +21,16 @@ R$ 13,000 FGTS, defaults for everything else. Figures come from the retired Pyth
 |---|---|---|---|---|---|
 | 1 | P0.1 Decision record: the engine runs in the browser | E0 | Decision | 2 | — **done 2026-11-09** |
 | 2 | P0.2 Rewrite ROADMAP, mvp.md, backlog.md to the plan | E0 | Task | 1 | 1 — **this change** |
-| 3 | P1.1 Workspace skeleton: npm workspaces, Node 24, strict tsconfig, vitest, `npm test`, hook | E1 | Enabler | 2 | 2 |
-| 4 | P1.2 Move `engine-ts` into `engine/src`; public API | E1 | Enabler | 2 | 3 |
-| 5 | P1.3 Golden master: corpus + the tag's digests, vitest check | E1 | Enabler | 3 | 4 |
-| 6 | P1.4 Port the model's unit tests (`test_models`, `test_validators`, `test_views`) | E1 | Enabler | 3 | 4 |
-| 7 | P1.5 Structured errors: `code`, `field`, `params` | E1 | Enabler | 3 | 4 |
-| 8 | P1.6 Cash-ladder amount rules in the engine | E1 | Enabler | 2 | 4 |
-| 9 | P2.1 cucumber-js runs the `.feature` files; support and steps ported; `test_support` ported | E1 | Enabler | 5 | 5 |
-| 10 | P3.1 CLI in Node, same flags as `cli.py`; `test_cli_controller` ported | E1 | Enabler | 3 | 4 |
-| 11 | P3.2 READMEs (EN/PT) for Node; mark `api-contract.md` and the Connect decision superseded | E1 | Task | 3 | 9, 10 |
-| 12 | P3.3 Golden update protocol: `npm run golden:update` | E1 | Task | 1 | 5 |
+| 3 | P1.1 Workspace skeleton: npm workspaces, Node 24, strict tsconfig, vitest, `npm test`, hook | E1 | Enabler | 2 | 2 — **done 2026-11-09** (the hook: `.githooks/pre-push` runs `npm test`) |
+| 4 | P1.2 Move `engine-ts` into `engine/src`; public API | E1 | Enabler | 2 | 3 — **done 2026-11-09**; accepted: `run_features.py --engine ts`, 54/54 in Chromium 155 |
+| 5 | P1.3 Golden master: corpus + the tag's digests, vitest check | E1 | Enabler | 3 | 4 — **done 2026-11-09** ([engine/golden](../../engine/golden/README.md)) |
+| 6 | P1.4 Port the model's unit tests (`test_models`, `test_validators`, `test_views`) | E1 | Enabler | 3 | 4 — **done 2026-11-09**: the input model rebuilt as in Python (DTOs, interface, validator classes), 24 + 55 + 6 cases |
+| 7 | P1.5 Structured errors: `code`, `field`, `params` | E1 | Enabler | 3 | 4 — **done 2026-11-09**: `code`, `fields` (a list: several rules involve two or three fields), `params`; `MESSAGES[code](params)` is the English text |
+| 8 | P1.6 Cash-ladder amount rules in the engine | E1 | Enabler | 2 | 4, 12 — **done 2026-11-09**: finite, ≥ 0, ≤ list price, increasing to the cent; 5 golden answers changed on purpose; the scenario waits for G2 ([draft](pending-scenarios.md)) |
+| 9 | P2.1 cucumber-js runs the `.feature` files; support and steps ported; `test_support` ported | E1 | Enabler | 5 | 5 — **done 2026-11-09**: `features/` workspace, 29 steps, 54/54 |
+| 10 | P3.1 CLI in Node, same flags as `cli.py`; `test_cli_controller` ported | E1 | Enabler | 3 | 4 — **done 2026-11-09**: `cli/`, `npx sincero`; the Python CLI's output recorded and replayed |
+| 11 | P3.2 READMEs (EN/PT) for Node; mark `api-contract.md` and the Connect decision superseded | E1 | Task | 3 | 9, 10 — **done 2026-11-09** (also the proto and API-shape decisions) |
+| 12 | P3.3 Golden update protocol: `npm run golden:update` | E1 | Task | 1 | 5 — **done 2026-11-09**, before item 8 (P1.6 changes golden answers) |
 | 13 | 6.12 `DECISION` record the language decision (PT + EN) | E2 | Decision | 1 | — |
 | 14 | D1 `DECISION` disclaimer wording | E2 | Decision | 1 | — |
 | 15 | 6.1 Scaffold `web/` (Vite + React), with a translation file | E2 | Enabler | 3 | 3, 13 |
@@ -80,8 +80,9 @@ repeated here. The value they carry for the buyer is the gate to E2: the UI show
 computes, and G1 and G2 prove that is what the Python engine computed.
 
 - **G1** (after item 8): golden 100% on Node 24; unit tests green; 54/54 through the package; a
-  planted naive `sum()` fails the golden test.
+  planted naive `sum()` fails the golden test. **Passed 2026-11-09.**
 - **G2** (after item 9): 54/54 on cucumber-js; the `(k − 1)/N` mutant fails 8 scenarios there too.
+  **Passed 2026-11-09.**
 
 ## E2. Simulate in the browser
 

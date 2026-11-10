@@ -6,16 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SINCERO: a cost simulator for off-plan apartment purchases in Brazil (INCC correction, construction interest, closing costs, SAC/PRICE financing, the "Caixa trigger" credit gap). The root `README.md` has the full business-rule table; update it and `README.pt-br.md` together.
 
-**The repository is between engines.** The Python engine, the protobuf contract and the Connect service were retired on 2026-11-09 and live on the branch `legacy/python-engine` and the tag `python-engine-final`. The replacement, a TypeScript engine that runs in the browser, is planned in `docs/plan/typescript-port.md` and not started: there is no application code, no test runner and no build here yet. `ROADMAP.md` and `tasks.md` still describe the Python plan and are to be rewritten (P0.2).
+**The Python engine is retired; the TypeScript engine is in.** The Python engine, the protobuf contract and the Connect service were retired on 2026-11-09 and live on the branch `legacy/python-engine` and the tag `python-engine-final`. The replacement is a TypeScript engine that runs in the browser (`docs/plan/typescript-port.md`). Phases P1 (engine package + golden master), P2 (cucumber-js) and P3 (Node CLI) are done; P4 (the web app) is next. `ROADMAP.md` and `docs/plan/backlog.md` hold the status.
 
-Read the retired code with `git show python-engine-final:backend/app/models/simulator.py`, or restore a part with `git checkout python-engine-final -- backend/proto`.
+Read the retired code with `git show python-engine-final:backend/app/models/simulator.py`, or restore a part with `git checkout python-engine-final -- backend/proto`. A full checkout of the old backend lives in `legacy/backend/` (git-ignored through `.git/info/exclude`; recreate it with `mkdir -p legacy && git archive legacy/python-engine backend | tar -x -C legacy`), which the experiment's harness reads (`SINCERO_PYTHON_BACKEND` overrides it).
 
 ## What is here
 
-- `backend/features/*.feature`: the business specification in Gherkin (English). `backend/features_pt_br/` is a Portuguese translation kept as documentation only; keep it in sync by hand when you change a scenario. The step definitions were Python/behave and were removed; they come back as cucumber-js in phase 2 of the plan. Step vocabulary: `backend/features/README.md`.
-- `docs/`: decisions, plans, the API contract (revision 7, superseded in practice), and the experiments. `docs/experiments/browser-engine` is the TypeScript port's proof of concept; its build reads `backend/app/`, which no longer exists on this branch, so it only runs from the tag.
-- `.githooks/pre-push`: a no-op until `npm test` exists. Enable hooks once per clone with `git config core.hooksPath .githooks`.
-- `/finish-task` (`.claude/commands/finish-task.md`): test, push, PR, squash-merge on GitHub, then a new branch from `develop`. Its test step (`make test` in `backend/`) no longer applies.
+- `engine/` (`@sincero/engine`): the calculation engine in TypeScript, no I/O. `engine/golden/` is the golden master built from the Python engine (bit-exact on Node ≥ 24); update it only through `npm run golden:update`.
+- `features/` (`@sincero/features`): the business specification in Gherkin (English) run on cucumber-js against the engine. `features/pt_br/` is a Portuguese translation kept as documentation only; keep it in sync by hand when you change a scenario. Step vocabulary: `features/README.md`.
+- `cli/` (`@sincero/cli`): `npx sincero`, same flags and same text as the old `cli.py`.
+- `docs/`: decisions, plans, the API contract (superseded) and the experiments. `docs/experiments/browser-engine` is the proof of concept; its Python engines (`--engine pyodide|brython|cpython`) need `legacy/backend`.
+- `npm ci && npm test` (Node ≥ 24, `.nvmrc`): typecheck plus every workspace's tests. `.githooks/pre-push` runs it; `npm ci` enables the hooks (or `git config core.hooksPath .githooks`).
+- `/finish-task` (`.claude/commands/finish-task.md`): test, push, PR, squash-merge on GitHub, then a new branch from `develop`.
 
 ## Rules that survive the port
 

@@ -1,5 +1,10 @@
 # Decision: the input fields are declared in a `.proto`, and the DTOs' fields are generated from it
 
+> **Superseded on 2026-11-09** by [engine-in-the-browser](engine-in-the-browser.md) (decision B:
+> protobuf retired with Python). The input fields are declared once in TypeScript, in `FIELDS` and
+> the DTO classes of `engine/src/input-dto.ts`; nothing is generated. The `.proto`, `gen_dto.py` and
+> their test are on the tag `python-engine-final` (and in `legacy/backend/`).
+
 *Status: accepted, implemented in `backend/proto/sincero/simulation_input.proto`,
 `backend/tools/gen_dto.py` and the generated `backend/app/models/input_fields.py`; pinned by
 `backend/tests/test_gen_dto.py`. Builds on [field-specs-from-dtos](field-specs-from-dtos.md),

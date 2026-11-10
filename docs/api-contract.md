@@ -1,5 +1,11 @@
 # SINCERO API contract
 
+> **Superseded on 2026-11-09** by [engine-in-the-browser](decisions/engine-in-the-browser.md): the
+> engine runs in the buyer's browser, so there is no server and no API. This contract (revision 7, and
+> revision 6 before it) is kept as history and as the starting point of a future public API:
+> [how to bring it back](plan/typescript-port.md#a-public-api-later). The `backend/` files it names are
+> on the tag `python-engine-final` (and in `legacy/backend/`).
+
 *Revision 7 — 2026-11-05. The API is the Connect service `sincero.Simulations`
 ([decision](decisions/api-protocol-and-language.md)). Supersedes revision 6, the REST API
 (`/api/simulations`, `/api/comparisons`, `/api/fields`); the figures and the payload of a

@@ -1,5 +1,10 @@
 # Decision: the API's field specs are derived from the DTOs, and `GET /api/fields` is their projection
 
+> **Superseded on 2026-11-09** by [engine-in-the-browser](engine-in-the-browser.md): there is no API,
+> so no shape layer and no `GET /api/fields`. The fields are declared once in the engine's `FIELDS`
+> (`engine/src/input-dto.ts`), which the CLI's `--help` and the web page read. The files named below
+> are on the tag `python-engine-final` (and in `legacy/backend/`).
+
 *Status: accepted on 2026-11-03, implemented in `app/controllers/api_requests.py`
 (`FieldSpec`, `FIELD_SPECS`, `field_specs()`), pinned by `tests/test_api_requests.py`. The
 Flask route `GET /api/fields` itself is milestone 5. Since

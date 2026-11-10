@@ -8,15 +8,15 @@ retired plan.
 
 | Milestone | Scope | Status |
 |---|---|---|
-| 1 | Gherkin feature files describing the business scenarios (`backend/features/`) | ✅ |
+| 1 | Gherkin feature files describing the business scenarios (`features/`, moved from `backend/features/`) | ✅ |
 | 2 | Python engine + CLI | ✅ retired, on `legacy/python-engine` and the tag `python-engine-final` |
 | 3 | BDD validation with **behave** (Allure labels); Portuguese feature files as documentation | ✅ retired with Python; the `.feature` files stay |
 | 4 | **MVC** backend: `app/models`, `app/views`, `app/controllers` | ✅ retired with Python |
 | 5 | Connect API (task 5.4 reached: `service Simulations`, generated code) | ⛔ dropped after 5.4: no server ([decision](docs/decisions/engine-in-the-browser.md)) |
 | P0 | Decide: the decision record (P0.1), plan documents rewritten (P0.2), optional preview (P0.3) | 🚧 P0.1, P0.2 done; P0.3 optional |
-| P1 | The engine package `engine/`: workspace, golden master from the tag, unit tests, structured errors, cash-ladder rules → **G1** | ⬜ next |
-| P2 | The `.feature` files on cucumber-js → **G2** | ⬜ |
-| P3 | CLI in Node, READMEs for Node, golden update protocol | ⬜ |
+| P1 | The engine package `engine/`: workspace, golden master from the tag, unit tests, structured errors, cash-ladder rules → **G1** | ✅ P1.1–P1.6 done; **G1 passed 2026-11-09**: golden master 456/456 on Node 24 (bit-identical to Python except the 5 answers P1.6 changed on purpose), unit tests green, planted mutants fail, and 54/54 scenarios through the package in Chromium 155 (`run_features.py --engine ts`) |
+| P2 | The `.feature` files on cucumber-js → **G2** | ✅ **G2 passed 2026-11-09**: 54/54 scenarios (399 steps) on cucumber-js against `@sincero/engine`, the text unchanged; the `(k − 1)/N` mutant fails 8 scenarios, as under behave; `test_support` ported (19 cases); Allure report kept (`npm run report`) |
+| P3 | CLI in Node, READMEs for Node, golden update protocol | ✅ P3.1 `npx sincero`, the same flags and the same text as `cli.py` (17 recorded outputs of the Python CLI replayed, byte for byte); P3.2 READMEs (EN/PT) for Node, the API contract and the retired stack's decisions marked superseded; P3.3 `npm run golden:update` |
 | P4 | Web app (Vite + React, PT + EN) → **G3**: RA in the browser shows 19.6% and R$ 39,802.30 | ⬜ |
 | P5 | Playwright on the main path; the golden corpus in Chromium, Firefox and WebKit | ⬜ |
 | P6 | Ship: static host, CI, usage counts or none, feedback, public address | ⬜ |
